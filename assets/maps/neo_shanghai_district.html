@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEO-SHANGHAI // DISTRICT OVERVIEW</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  /* ══════════════════════════════════════════
+     CORE RESET & BODY
+     ══════════════════════════════════════════ */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0f;
+    color: #c0c0c0;
+    font-family: 'Share Tech Mono', monospace;
+    overflow-x: hidden;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  /* ══════════════════════════════════════════
+     RAIN EFFECT
+     ══════════════════════════════════════════ */
+  #rain-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.3;
+  }
+
+  /* ══════════════════════════════════════════
+     SCANLINE OVERLAY
+     ══════════════════════════════════════════ */
+  .scanlines {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 999;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.08) 2px,
+      rgba(0, 0, 0, 0.08) 4px
+    );
+  }
+
+  /* ══════════════════════════════════════════
+     HEADER / TITLE
+     ══════════════════════════════════════════ */
+  .map-header {
+    text-align: center;
+    padding: 24px 16px 12px;
+    position: relative;
+    z-index: 10;
+  }
+
+  .map-title {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: clamp(1.4rem, 4vw, 2.4rem);
+    letter-spacing: 0.3em;
+    color: #00ffcc;
+    text-shadow:
+      0 0 10px rgba(0, 255, 204, 0.7),
+      0 0 40px rgba(0, 255, 204, 0.3),
+      0 0 80px rgba(0, 255, 204, 0.1);
+    position: relative;
+    display: inline-block;
+  }
+
+  .map-title::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(transparent 50%, rgba(0,0,0,0.15) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+  }
+
+  .map-subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: #666;
+    letter-spacing: 0.5em;
+    margin-top: 6px;
+  }
+
+  .header-line {
+    width: 80%;
+    max-width: 700px;
+    height: 1px;
+    margin: 12px auto 0;
+    background: linear-gradient(90deg, transparent, #00ffcc44, #00ffcc, #00ffcc44, transparent);
+  }
+
+  /* ══════════════════════════════════════════
+     MAP CONTAINER
+     ══════════════════════════════════════════ */
+  .map-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px 16px;
+    gap: 20px;
+    position: relative;
+    z-index: 10;
+    flex-wrap: wrap;
+  }
+
+  .map-container {
+    position: relative;
+    width: 900px;
+    height: 700px;
+    max-width: 95vw;
+    background:
+      radial-gradient(ellipse at center, #111118 0%, #0a0a0f 100%);
+    border: 1px solid #1a3a3a;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow:
+      0 0 30px rgba(0, 255, 204, 0.05),
+      inset 0 0 60px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Grid background lines */
+  .map-container::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image:
+      linear-gradient(rgba(0, 255, 204, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 204, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ══════════════════════════════════════════
+     DISTRICTS
+     ══════════════════════════════════════════ */
+  .district {
+    position: absolute;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 5;
+    clip-path: polygon(var(--clip));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    flex-direction: column;
+  }
+
+  .district-fill {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0.15;
+    transition: opacity 0.3s ease;
+    clip-path: polygon(var(--clip));
+  }
+
+  .district-border {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    clip-path: polygon(var(--clip));
+    box-shadow: inset 0 0 0 2px var(--color);
+    transition: box-shadow 0.3s ease, filter 0.3s ease;
+    filter: drop-shadow(0 0 6px var(--color));
+  }
+
+  .district:hover .district-fill {
+    opacity: 0.3;
+  }
+
+  .district:hover .district-border {
+    box-shadow: inset 0 0 0 2px var(--color);
+    filter: drop-shadow(0 0 14px var(--color));
+  }
+
+  .district-label {
+    position: relative;
+    z-index: 6;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--color);
+    text-shadow: 0 0 8px var(--color);
+    text-transform: uppercase;
+    pointer-events: none;
+    padding: 0 8px;
+    transition: opacity 0.3s ease;
+  }
+
+  .district-status-label {
+    position: relative;
+    z-index: 6;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.5rem;
+    color: var(--color);
+    opacity: 0.6;
+    letter-spacing: 0.1em;
+    pointer-events: none;
+    margin-top: 2px;
+    transition: opacity 0.3s ease;
+  }
+
+  /* ── FOG OF WAR ── */
+  .district[data-revealed="false"] {
+    cursor: default;
+  }
+
+  .district[data-revealed="false"] .district-fill {
+    opacity: 0.03;
+  }
+
+  .district[data-revealed="false"] .district-border {
+    filter: none;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+  }
+
+  .district[data-revealed="false"] .district-label,
+  .district[data-revealed="false"] .district-status-label {
+    opacity: 0;
+  }
+
+  .district[data-revealed="false"]:hover .district-fill {
+    opacity: 0.06;
+  }
+
+  .district[data-revealed="false"]:hover .district-border {
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+  }
+
+  /* Fog noise overlay */
+  .fog-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 7;
+    opacity: 0.5;
+    clip-path: polygon(var(--clip));
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    background-size: 128px 128px;
+    mix-blend-mode: overlay;
+    transition: opacity 0.5s ease;
+  }
+
+  .district[data-revealed="true"] .fog-overlay {
+    opacity: 0;
+  }
+
+  /* ══════════════════════════════════════════
+     PLAYER MARKER
+     ══════════════════════════════════════════ */
+  .player-marker {
+    position: absolute;
+    z-index: 50;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+    /* DM: Change top/left to reposition the player marker */
+    top: 50%;
+    left: 18%;
+    transform: translate(-50%, -50%);
+    transition: top 0.8s ease, left 0.8s ease;
+  }
+
+  .player-dot {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 8px; height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 6px #fff, 0 0 12px #ff6a00;
+    z-index: 2;
+  }
+
+  .player-ping {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 8px; height: 8px;
+    border: 2px solid #ff6a00;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: ping 2s ease-out infinite;
+  }
+
+  .player-ping:nth-child(3) {
+    animation-delay: 0.7s;
+  }
+
+  @keyframes ping {
+    0% { width: 8px; height: 8px; opacity: 1; }
+    100% { width: 40px; height: 40px; opacity: 0; }
+  }
+
+  .player-tag {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.5rem;
+    color: #ff6a00;
+    white-space: nowrap;
+    text-shadow: 0 0 4px #ff6a00;
+    letter-spacing: 0.1em;
+  }
+
+  /* ══════════════════════════════════════════
+     DISTRICT INFO POPUP
+     ══════════════════════════════════════════ */
+  .popup-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .popup-overlay.active {
+    display: flex;
+  }
+
+  .popup {
+    background: #0d0d14;
+    border: 1px solid var(--popup-color, #00ffcc);
+    box-shadow:
+      0 0 30px rgba(0, 255, 204, 0.15),
+      inset 0 0 30px rgba(0, 0, 0, 0.5);
+    max-width: 480px;
+    width: 90vw;
+    padding: 0;
+    position: relative;
+    animation: popupIn 0.25s ease-out;
+  }
+
+  @keyframes popupIn {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .popup-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .popup-name {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--popup-color, #00ffcc);
+    text-shadow: 0 0 10px var(--popup-color, #00ffcc);
+    letter-spacing: 0.1em;
+  }
+
+  .popup-close {
+    background: none;
+    border: 1px solid #333;
+    color: #666;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .popup-close:hover {
+    border-color: #ff3333;
+    color: #ff3333;
+  }
+
+  .popup-body {
+    padding: 16px 20px 20px;
+  }
+
+  .popup-status {
+    display: inline-block;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    padding: 3px 10px;
+    border: 1px solid var(--popup-color, #00ffcc);
+    color: var(--popup-color, #00ffcc);
+    margin-bottom: 12px;
+    text-shadow: 0 0 6px var(--popup-color, #00ffcc);
+  }
+
+  .popup-threat {
+    font-size: 0.7rem;
+    color: #888;
+    margin-bottom: 12px;
+  }
+
+  .popup-threat span {
+    color: var(--popup-color, #00ffcc);
+  }
+
+  .popup-desc {
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: #999;
+    margin-bottom: 16px;
+    border-left: 2px solid var(--popup-color, #00ffcc);
+    padding-left: 12px;
+  }
+
+  .popup-locations-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: #666;
+    margin-bottom: 8px;
+  }
+
+  .popup-locations {
+    list-style: none;
+  }
+
+  .popup-locations li {
+    font-size: 0.75rem;
+    color: #aaa;
+    padding: 3px 0;
+    padding-left: 16px;
+    position: relative;
+  }
+
+  .popup-locations li::before {
+    content: '>';
+    position: absolute;
+    left: 0;
+    color: var(--popup-color, #00ffcc);
+    opacity: 0.7;
+  }
+
+  /* ══════════════════════════════════════════
+     LEGEND
+     ══════════════════════════════════════════ */
+  .legend {
+    width: 220px;
+    flex-shrink: 0;
+    background: #0d0d14;
+    border: 1px solid #1a2a2a;
+    padding: 16px;
+    position: relative;
+    z-index: 10;
+  }
+
+  .legend-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: #00ffcc;
+    margin-bottom: 14px;
+    text-shadow: 0 0 6px rgba(0,255,204,0.4);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.7rem;
+  }
+
+  .legend-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    border: 1px solid;
+  }
+
+  .legend-divider {
+    border: none;
+    border-top: 1px solid #1a2a2a;
+    margin: 12px 0;
+  }
+
+  .legend-fog-demo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 0.65rem;
+    color: #666;
+  }
+
+  .fog-demo-box {
+    width: 12px; height: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .revealed-demo-box {
+    width: 12px; height: 12px;
+    background: rgba(0, 255, 204, 0.2);
+    border: 1px solid rgba(0, 255, 204, 0.5);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .legend-note {
+    font-size: 0.55rem;
+    color: #444;
+    line-height: 1.5;
+    margin-top: 10px;
+    border-top: 1px solid #1a2a2a;
+    padding-top: 10px;
+  }
+
+  /* ══════════════════════════════════════════
+     RESPONSIVE
+     ══════════════════════════════════════════ */
+  @media (max-width: 1024px) {
+    .map-wrapper {
+      flex-direction: column;
+      align-items: center;
+    }
+    .legend {
+      width: 95vw;
+      max-width: 900px;
+    }
+    .legend-item {
+      display: inline-flex;
+      margin-right: 16px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .map-container {
+      height: 500px;
+    }
+    .district-label { font-size: 0.45rem; }
+    .district-status-label { font-size: 0.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Scanline overlay -->
+<div class="scanlines"></div>
+
+<!-- Rain canvas -->
+<canvas id="rain-canvas"></canvas>
+
+<!-- ════════════════════════════════════════
+     HEADER
+     ════════════════════════════════════════ -->
+<header class="map-header">
+  <div class="map-title">NEO-SHANGHAI // DISTRICT OVERVIEW</div>
+  <div class="map-subtitle">TACTICAL INTERFACE v4.7.2 &mdash; CLASSIFIED</div>
+  <div class="header-line"></div>
+</header>
+
+<!-- ════════════════════════════════════════
+     MAP + LEGEND
+     ════════════════════════════════════════ -->
+<div class="map-wrapper">
+  <div class="map-container" id="map">
+
+    <!-- ════════════════════════════════════
+         DISTRICT: THE SPIRE (center-top)
+         ════════════════════════════════════ -->
+    <!-- DM: SET data-revealed="true" TO REVEAL -->
+    <div class="district" id="district-spire"
+         data-revealed="false"
+         data-name="The Spire"
+         data-status="RESTRICTED"
+         data-threat="EXTREME"
+         data-desc="The gleaming obsidian tower of Huang Wei Corp pierces the smog like a dagger aimed at heaven. Corporate security drones patrol every level, their red eyes scanning for unauthorized personnel. The executive floors are rumored to house wetware labs where they rewrite minds like bad code."
+         data-locations="Huang Wei Corp HQ,Executive Sky Lounge,Corporate Security Hub,Wetware Research Lab"
+         style="--color: #4488ff; --clip: 15% 0%, 85% 0%, 75% 100%, 25% 100%; top: 2%; left: 28%; width: 44%; height: 22%;">
+      <div class="district-fill" style="background: #4488ff;"></div>
+      <div class="district-border"></div>
+      <div class="fog-overlay"></div>
+      <span class="district-label">The Spire</span>
+      <span class="district-status-label">// RESTRICTED</span>
+    </div>
+
+    <!-- ════════════════════════════════════
+         DISTRICT: SKYBRIDGE (top-right)
+         ════════════════════════════════════ -->
+    <!-- DM: SET data-revealed="true" TO REVEAL -->
+    <div class="district" id="district-skybridge"
+         data-revealed="false"
+         data-name="Skybridge District"
+         data-status="PATROLLED"
+         data-threat="MODERATE"
+         data-desc="Elevated walkways and hab-blocks for mid-tier corporate drones who sold their souls for a view above the smog line. Transit pods hum along magnetic rails day and night. Security is tight but not airtight -- if you know which maintenance tunnels to crawl through."
+         data-locations="Central Transit Hub,Midtown Hab-Blocks,SkyMed Clinic,Mag-Rail Station 7"
+         style="--color: #aa55ff; --clip: 10% 0%, 100% 5%, 95% 95%, 0% 100%; top: 4%; left: 73%; width: 26%; height: 28%;">
+      <div class="district-fill" style="background: #aa55ff;"></div>
+      <div class="district-border"></div>
+      <div class="fog-overlay"></div>
+      <span class="district-label">Skybridge</span>
+      <span class="district-status-label">// PATROLLED</span>
+    </div>
+
+    <!-- ════════════════════════════════════
+         DISTRICT: THE RUSTED MILE (left)
+         ════════════════════════════════════ -->
+    <!-- DM: SET data-revealed="true" TO REVEAL -->
+    <div class="district" id="district-rusted-mile"
+         data-revealed="true"
+         data-name="The Rusted Mile"
+         data-status="HOME BASE"
+         data-threat="LOW-MODERATE"
+         data-desc="Flickering sodium lights paint everything in shades of amber and despair. The air tastes like machine oil and broken promises. Your apartment sits above Kira's Chop Shop -- three rooms of corrugated steel you call home. The neighbors don't ask questions, which is the only luxury you can afford."
+         data-locations="Kira's Chop Shop,Player's Apartment,Mama Chen's Noodle Stand,Rust & Ruin Repair Bay"
+         style="--color: #ff9922; --clip: 5% 0%, 95% 5%, 100% 100%, 0% 90%; top: 24%; left: 1%; width: 28%; height: 34%;">
+      <div class="district-fill" style="background: #ff9922;"></div>
+      <div class="district-border"></div>
+      <div class="fog-overlay"></div>
+      <span class="district-label">The Rusted Mile</span>
+      <span class="district-status-label">// HOME BASE</span>
+    </div>
+
+    <!-- ════════════════════════════════════
+         DISTRICT: NEON ROW (center)
+         ════════════════════════════════════ -->
+    <!-- DM: SET data-revealed="true" TO REVEAL -->
+    <div class="district" id="district-neon-row"
+         data-revealed="true"
+         data-name="Neon Row"
+         data-status="ACCESSIBLE"
+         data-threat="MODERATE"
+         data-desc="A river of holographic light and bass-heavy music that never sleeps. Every vice has a price tag and every smile hides a blade. The black markets operate in plain sight because even the cops come here to spend their bribes. Information flows cheaper than synth-sake if you know the right bartender."
+         data-locations="The Bleeding Edge (club),Lucky Dragon Black Market,Whisper's Info Broker Den,Synth-Sake Alley"
+         style="--color: #ff33aa; --clip: 8% 2%, 92% 0%, 95% 98%, 5% 100%; top: 25%; left: 29%; width: 33%; height: 32%;">
+      <div class="district-fill" style="background: #ff33aa;"></div>
+      <div class="district-border"></div>
+      <div class="fog-overlay"></div>
+      <span class="district-label">Neon Row</span>
+      <span class="district-status-label">// ACCESSIBLE</span>
+    </div>
+
+    <!-- ════════════════════════════════════
+         DISTRICT: THE GRID (right)
+         ════════════════════════════════════ -->
+    <!-- DM: SET data-revealed="true" TO REVEAL -->
+    <div class="district" id="district-grid"
+         data-revealed="false"
+         data-name="The Grid"
+         data-status="MONITORED"
+         data-threat="HIGH"
+         data-desc="Towers of humming server racks stretch into the haze, their cooling fans roaring like mechanical waterfalls. Every packet of data in Neo-Shanghai passes through here. Netrunners gather in hidden cafes, jacking in to ride the data streams. Huang Wei's ICE patrols are merciless -- get caught, and they flatline your deck and your brain."
+         data-locations="Node Zero Net Cafe,Server Farm Omega,Dead Drop Data Haven,ICE Patrol Station"
+         style="--color: #00ddff; --clip: 0% 5%, 100% 0%, 95% 100%, 5% 95%; top: 30%; left: 63%; width: 36%; height: 30%;">
+      <div class="district-fill" style="background: #00ddff;"></div>
+      <div class="district-border"></div>
+      <div class="fog-overlay"></div>
+      <span class="district-label">The Grid</span>
+      <span class="district-status-label">// MONITORED</span>
+    </div>
+
+    <!-- ════════════════════════════════════
+         DISTRICT: JADE QUARTER (bottom-left)
+         ════════════════════════════════════ -->
+    <!-- DM: SET data-revealed="true" TO REVEAL -->
+    <div class="district" id="district-jade"
+         data-revealed="false"
+         data-name="Jade Quarter"
+         data-status="CAUTION"
+         data-threat="HIGH"
+         data-desc="Paper lanterns and holographic dragons hang above streets where ancient tradition meets bleeding-edge augmentation. The Red Lotus Triad runs everything here with an iron fist wrapped in silk. Traditional tea houses double as planning rooms for heists that would make your head spin. Respect the customs or disappear."
+         data-locations="Red Lotus Triad HQ,Jade Temple (augmented),Madam Yin's Tea House,Underground Fight Ring"
+         style="--color: #33dd66; --clip: 0% 0%, 100% 8%, 90% 100%, 8% 95%; top: 58%; left: 1%; width: 30%; height: 26%;">
+      <div class="district-fill" style="background: #33dd66;"></div>
+      <div class="district-border"></div>
+      <div class="fog-overlay"></div>
+      <span class="district-label">Jade Quarter</span>
+      <span class="district-status-label">// CAUTION</span>
+    </div>
+
+    <!-- ════════════════════════════════════
+         DISTRICT: OLD SHANGHAI (bottom-center)
+         ════════════════════════════════════ -->
+    <!-- DM: SET data-revealed="true" TO REVEAL -->
+    <div class="district" id="district-old-shanghai"
+         data-revealed="false"
+         data-name="Old Shanghai"
+         data-status="DANGEROUS"
+         data-threat="EXTREME"
+         data-desc="The ruins of the pre-war city rot beneath a permanent shadow. Collapsed skyscrapers lean against each other like drunk giants. Squatter communes hide in the rubble, and something else hides deeper -- rogue AI constructs that whisper through broken speakers and dead screens. Nobody comes here on purpose. Nobody smart, anyway."
+         data-locations="The Hollows (squatter camp),Collapsed Bund Ruins,Signal Source Unknown,AI Whisper Zone"
+         style="--color: #cc2222; --clip: 5% 0%, 95% 5%, 100% 100%, 0% 95%; top: 72%; left: 22%; width: 34%; height: 27%;">
+      <div class="district-fill" style="background: #cc2222;"></div>
+      <div class="district-border"></div>
+      <div class="fog-overlay"></div>
+      <span class="district-label">Old Shanghai</span>
+      <span class="district-status-label">// DANGEROUS</span>
+    </div>
+
+    <!-- ════════════════════════════════════
+         DISTRICT: THE DOCKS (bottom-right)
+         ════════════════════════════════════ -->
+    <!-- DM: SET data-revealed="true" TO REVEAL -->
+    <div class="district" id="district-docks"
+         data-revealed="false"
+         data-name="The Docks"
+         data-status="CONTESTED"
+         data-threat="HIGH"
+         data-desc="Salt air and diesel fumes mingle with the acrid scent of contraband. Automated cranes move shipping containers in patterns that hide smuggler's cargo from orbital surveillance. Three different factions fight for control of the waterfront -- the Triads, corpo security, and a crew of ex-military runners who answer to no one."
+         data-locations="Warehouse 13 (smuggler hub),Harbor Control Tower,The Rusty Anchor Bar,Container Maze"
+         style="--color: #22aaaa; --clip: 10% 0%, 95% 10%, 100% 100%, 0% 90%; top: 62%; left: 57%; width: 42%; height: 30%;">
+      <div class="district-fill" style="background: #22aaaa;"></div>
+      <div class="district-border"></div>
+      <div class="fog-overlay"></div>
+      <span class="district-label">The Docks</span>
+      <span class="district-status-label">// CONTESTED</span>
+    </div>
+
+    <!-- ════════════════════════════════════
+         PLAYER LOCATION MARKER
+         DM: Change top/left values to move the player.
+         ════════════════════════════════════ -->
+    <div class="player-marker" id="player-marker" data-district="rusted-mile" style="top: 42%; left: 14%;">
+      <div class="player-ping"></div>
+      <div class="player-ping"></div>
+      <div class="player-dot"></div>
+      <div class="player-tag">PLAYER</div>
+    </div>
+
+  </div><!-- /map-container -->
+
+  <!-- ════════════════════════════════════════
+       LEGEND
+       ════════════════════════════════════════ -->
+  <aside class="legend">
+    <div class="legend-title">LEGEND</div>
+
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: rgba(68,136,255,0.2); border-color: #4488ff;"></div>
+      <span style="color: #4488ff;">RESTRICTED</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: rgba(255,51,170,0.2); border-color: #ff33aa;"></div>
+      <span style="color: #ff33aa;">ACCESSIBLE</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: rgba(255,153,34,0.2); border-color: #ff9922;"></div>
+      <span style="color: #ff9922;">HOME BASE</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: rgba(51,221,102,0.2); border-color: #33dd66;"></div>
+      <span style="color: #33dd66;">CAUTION</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: rgba(0,221,255,0.2); border-color: #00ddff;"></div>
+      <span style="color: #00ddff;">MONITORED</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: rgba(204,34,34,0.2); border-color: #cc2222;"></div>
+      <span style="color: #cc2222;">DANGEROUS</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: rgba(34,170,170,0.2); border-color: #22aaaa;"></div>
+      <span style="color: #22aaaa;">CONTESTED</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: rgba(170,85,255,0.2); border-color: #aa55ff;"></div>
+      <span style="color: #aa55ff;">PATROLLED</span>
+    </div>
+
+    <hr class="legend-divider">
+
+    <div class="legend-fog-demo">
+      <div class="revealed-demo-box"></div>
+      <span>Revealed District</span>
+    </div>
+    <div class="legend-fog-demo">
+      <div class="fog-demo-box"></div>
+      <span>Fogged (Unexplored)</span>
+    </div>
+
+    <div class="legend-note">
+      DM: Set <code style="color:#00ffcc;">data-revealed="true"</code> on a district element to reveal it. Move the player marker by changing its <code style="color:#00ffcc;">top</code> and <code style="color:#00ffcc;">left</code> CSS values.
+    </div>
+  </aside>
+</div>
+
+<!-- ════════════════════════════════════════
+     DISTRICT INFO POPUP
+     ════════════════════════════════════════ -->
+<div class="popup-overlay" id="popup-overlay">
+  <div class="popup" id="popup">
+    <div class="popup-header">
+      <div class="popup-name" id="popup-name"></div>
+      <button class="popup-close" id="popup-close">[X] CLOSE</button>
+    </div>
+    <div class="popup-body">
+      <div class="popup-status" id="popup-status"></div>
+      <div class="popup-threat" id="popup-threat">THREAT LEVEL: <span id="popup-threat-val"></span></div>
+      <p class="popup-desc" id="popup-desc"></p>
+      <div class="popup-locations-title">KNOWN LOCATIONS</div>
+      <ul class="popup-locations" id="popup-locations"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     JAVASCRIPT
+     ════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+
+  /* ── Rain Effect ── */
+  const canvas = document.getElementById('rain-canvas');
+  const ctx = canvas.getContext('2d');
+  let drops = [];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function initDrops() {
+    drops = [];
+    const count = Math.floor(canvas.width * 0.15);
+    for (let i = 0; i < count; i++) {
+      drops.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        len: Math.random() * 14 + 6,
+        speed: Math.random() * 4 + 3,
+        opacity: Math.random() * 0.3 + 0.1
+      });
+    }
+  }
+
+  function drawRain() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const d of drops) {
+      ctx.beginPath();
+      ctx.moveTo(d.x, d.y);
+      ctx.lineTo(d.x + 0.5, d.y + d.len);
+      ctx.strokeStyle = `rgba(150, 200, 255, ${d.opacity})`;
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+      d.y += d.speed;
+      if (d.y > canvas.height) {
+        d.y = -d.len;
+        d.x = Math.random() * canvas.width;
+      }
+    }
+    requestAnimationFrame(drawRain);
+  }
+
+  resizeCanvas();
+  initDrops();
+  drawRain();
+  window.addEventListener('resize', () => { resizeCanvas(); initDrops(); });
+
+  /* ── District Click / Popup ── */
+  const overlay = document.getElementById('popup-overlay');
+  const popup = document.getElementById('popup');
+  const popupName = document.getElementById('popup-name');
+  const popupStatus = document.getElementById('popup-status');
+  const popupThreatVal = document.getElementById('popup-threat-val');
+  const popupDesc = document.getElementById('popup-desc');
+  const popupLocations = document.getElementById('popup-locations');
+  const popupClose = document.getElementById('popup-close');
+
+  document.querySelectorAll('.district').forEach(district => {
+    district.addEventListener('click', () => {
+      if (district.getAttribute('data-revealed') !== 'true') return;
+
+      const color = getComputedStyle(district).getPropertyValue('--color').trim();
+      popup.style.setProperty('--popup-color', color);
+      popup.style.borderColor = color;
+
+      popupName.textContent = district.dataset.name;
+      popupName.style.color = color;
+      popupName.style.textShadow = `0 0 10px ${color}`;
+
+      popupStatus.textContent = district.dataset.status;
+      popupStatus.style.borderColor = color;
+      popupStatus.style.color = color;
+      popupStatus.style.textShadow = `0 0 6px ${color}`;
+
+      popupThreatVal.textContent = district.dataset.threat;
+      popupThreatVal.style.color = color;
+
+      popupDesc.textContent = district.dataset.desc;
+      popupDesc.style.borderLeftColor = color;
+
+      const locs = district.dataset.locations.split(',');
+      popupLocations.innerHTML = '';
+      locs.forEach(loc => {
+        const li = document.createElement('li');
+        li.textContent = loc.trim();
+        popupLocations.appendChild(li);
+      });
+
+      // Set CSS variable on popup-locations li::before
+      popupLocations.querySelectorAll('li').forEach(li => {
+        li.style.setProperty('--popup-color', color);
+      });
+
+      overlay.classList.add('active');
+    });
+  });
+
+  popupClose.addEventListener('click', () => overlay.classList.remove('active'));
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('active');
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') overlay.classList.remove('active');
+  });
+
+})();
+</script>
+
+</body>
+</html>

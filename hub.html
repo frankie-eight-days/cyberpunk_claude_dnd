@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEON TERMINUS // Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   NEON TERMINUS — CORE STYLES
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cyan:#00f0ff;--magenta:#ff00aa;--amber:#ffaa00;
+  --red:#ff2244;--green:#00ff88;--bg:#0a0a0f;
+  --panel:#0d0d18;--border:#1a1a2e;--text:#c0c0d0;
+  --glow-cyan:0 0 8px #00f0ff88,0 0 20px #00f0ff44;
+  --glow-magenta:0 0 8px #ff00aa88,0 0 20px #ff00aa44;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{
+  font-family:'Share Tech Mono',monospace;color:var(--text);
+  background:var(--bg);min-height:100vh;overflow-x:hidden;
+  line-height:1.6;
+}
+
+/* ---- SCANLINE OVERLAY ---- */
+body::before{
+  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+}
+
+/* ---- CRT VIGNETTE ---- */
+body::after{
+  content:'';position:fixed;inset:0;z-index:9998;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,0.55) 100%);
+}
+
+/* ---- RAIN / STATIC PARTICLES (CSS only) ---- */
+.rain-container{
+  position:fixed;inset:0;z-index:-1;overflow:hidden;opacity:0.12;
+}
+.rain-container span{
+  position:absolute;display:block;width:1px;
+  background:linear-gradient(transparent,var(--cyan));
+  animation:rain-fall linear infinite;
+}
+@keyframes rain-fall{
+  0%{transform:translateY(-100vh) translateX(0);opacity:1}
+  100%{transform:translateY(100vh) translateX(20px);opacity:0}
+}
+
+/* ---- LAYOUT ---- */
+.hub-wrapper{
+  max-width:960px;margin:0 auto;padding:1.5rem 1.5rem 3rem;position:relative;z-index:1;
+}
+
+/* ---- GLITCH TITLE ---- */
+.header{text-align:center;padding:2rem 0 1rem;position:relative}
+.title{
+  font-family:'Orbitron',sans-serif;font-weight:900;
+  font-size:clamp(2.2rem,6vw,3.8rem);letter-spacing:0.12em;
+  color:#fff;position:relative;display:inline-block;
+  text-shadow:var(--glow-cyan),0 0 40px #00f0ff22;
+}
+.title::before,.title::after{
+  content:'NEON TERMINUS';position:absolute;top:0;left:0;right:0;
+  overflow:hidden;background:var(--bg);
+}
+.title::before{
+  color:var(--cyan);z-index:-1;
+  animation:glitch-1 3s infinite linear alternate-reverse;
+}
+.title::after{
+  color:var(--magenta);z-index:-2;
+  animation:glitch-2 2s infinite linear alternate-reverse;
+}
+@keyframes glitch-1{
+  0%,93%{clip-path:inset(0 0 0 0);transform:translate(0)}
+  94%{clip-path:inset(20% 0 40% 0);transform:translate(-4px,1px)}
+  95%{clip-path:inset(60% 0 5% 0);transform:translate(3px,-1px)}
+  96%{clip-path:inset(10% 0 70% 0);transform:translate(-2px,2px)}
+  97%,100%{clip-path:inset(0 0 0 0);transform:translate(0)}
+}
+@keyframes glitch-2{
+  0%,95%{clip-path:inset(0 0 0 0);transform:translate(0)}
+  96%{clip-path:inset(30% 0 30% 0);transform:translate(4px,-2px)}
+  97%{clip-path:inset(50% 0 10% 0);transform:translate(-3px,1px)}
+  98%,100%{clip-path:inset(0 0 0 0);transform:translate(0)}
+}
+.subtitle{
+  font-family:'Share Tech Mono',monospace;color:var(--cyan);
+  font-size:0.95rem;letter-spacing:0.3em;margin-top:0.4rem;opacity:0.7;
+}
+
+/* ---- SECTION STYLING ---- */
+.section{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:4px;margin:1.5rem 0;overflow:hidden;
+  box-shadow:0 0 20px rgba(0,0,0,0.4);
+}
+.section-header{
+  font-family:'Orbitron',sans-serif;font-size:0.75rem;
+  letter-spacing:0.25em;color:var(--cyan);
+  padding:0.75rem 1.2rem;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:0.6rem;
+  text-transform:uppercase;
+}
+.section-header .dot{
+  width:6px;height:6px;border-radius:50%;background:var(--cyan);
+  box-shadow:var(--glow-cyan);animation:pulse-dot 2s infinite;
+}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.3}}
+.section-body{padding:1.2rem;}
+
+/* ---- AUDIO SECTION ---- */
+.audio-section .section-body{
+  display:flex;flex-direction:column;gap:0.8rem;
+}
+.audio-frame-wrap{
+  position:relative;border:1px solid var(--border);border-radius:3px;
+  overflow:hidden;
+}
+.audio-frame-wrap iframe{display:block;width:100%;height:80px;border:none;}
+.audio-mood{
+  font-size:0.78rem;color:var(--magenta);opacity:0.7;
+  letter-spacing:0.08em;
+}
+
+/* ---- NAV GRID ---- */
+.nav-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:1rem;
+}
+.nav-card{
+  display:flex;align-items:center;gap:1rem;
+  padding:1rem 1.2rem;background:#08081200;
+  border:1px solid var(--border);border-radius:4px;
+  text-decoration:none;color:inherit;
+  transition:all 0.25s ease;position:relative;overflow:hidden;
+  cursor:pointer;
+}
+.nav-card:hover{
+  border-color:var(--cyan);background:#00f0ff08;
+  box-shadow:var(--glow-cyan);transform:translateY(-2px);
+}
+.nav-card.offline{opacity:0.5;cursor:default}
+.nav-card.offline:hover{
+  border-color:var(--red);box-shadow:0 0 8px #ff224444;
+  transform:none;background:transparent;
+}
+.nav-card .icon{
+  font-size:1.8rem;min-width:2.4rem;text-align:center;
+  filter:grayscale(0.2);
+}
+.nav-card .info{flex:1}
+.nav-card .label{
+  font-family:'Orbitron',sans-serif;font-size:0.72rem;
+  letter-spacing:0.18em;color:#fff;
+}
+.nav-card .desc{font-size:0.7rem;color:var(--text);opacity:0.5;margin-top:0.15rem}
+.nav-card .status{
+  font-size:0.6rem;letter-spacing:0.15em;padding:0.15rem 0.5rem;
+  border-radius:2px;font-family:'Orbitron',sans-serif;
+  white-space:nowrap;
+}
+.status.online{color:var(--green);border:1px solid var(--green);text-shadow:0 0 6px var(--green)}
+.status.offline{color:var(--red);border:1px solid var(--red);text-shadow:0 0 6px var(--red)}
+.status.classified{color:var(--amber);border:1px solid var(--amber);text-shadow:0 0 6px var(--amber)}
+
+/* ---- TRANSMISSION LOG ---- */
+.log-area{
+  background:#05050a;border:1px solid var(--border);border-radius:3px;
+  padding:1rem;max-height:300px;overflow-y:auto;
+  font-size:0.8rem;line-height:1.8;color:var(--green);
+  scrollbar-width:thin;scrollbar-color:var(--cyan) #0a0a0f;
+}
+.log-area::-webkit-scrollbar{width:4px}
+.log-area::-webkit-scrollbar-track{background:#0a0a0f}
+.log-area::-webkit-scrollbar-thumb{background:var(--cyan);border-radius:2px}
+.log-line{opacity:0.85}
+.log-line .timestamp{color:var(--cyan);opacity:0.5;margin-right:0.5rem}
+.log-line.system{color:var(--amber)}
+.log-line.error{color:var(--red)}
+.log-line.magenta{color:var(--magenta)}
+
+/* ---- INTEL PANEL ---- */
+.collapsible{border-bottom:1px solid var(--border)}
+.collapsible:last-child{border-bottom:none}
+.collapsible-toggle{
+  width:100%;background:none;border:none;color:var(--cyan);
+  font-family:'Orbitron',sans-serif;font-size:0.7rem;
+  letter-spacing:0.18em;padding:0.85rem 1.2rem;
+  cursor:pointer;display:flex;justify-content:space-between;align-items:center;
+  transition:background 0.2s;text-align:left;
+}
+.collapsible-toggle:hover{background:#00f0ff08}
+.collapsible-toggle .arrow{
+  transition:transform 0.3s;font-size:0.6rem;color:var(--text);
+}
+.collapsible.open .arrow{transform:rotate(90deg)}
+.collapsible-content{
+  max-height:0;overflow:hidden;transition:max-height 0.35s ease;
+}
+.collapsible.open .collapsible-content{max-height:600px}
+.collapsible-inner{
+  padding:0.6rem 1.2rem 1rem;font-size:0.78rem;color:var(--text);
+  line-height:1.7;
+}
+.quest-item,.npc-item{
+  padding:0.3rem 0;border-bottom:1px solid #ffffff08;
+}
+.quest-item .q-status{
+  font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:2px;
+  margin-left:0.5rem;vertical-align:middle;
+}
+.q-active{color:var(--green);border:1px solid var(--green)}
+.q-pending{color:var(--amber);border:1px solid var(--amber)}
+.faction-row{
+  display:flex;align-items:center;gap:0.8rem;padding:0.35rem 0;
+}
+.faction-name{min-width:140px;font-size:0.75rem;color:var(--text)}
+.faction-bar{
+  flex:1;height:6px;background:#1a1a2e;border-radius:3px;overflow:hidden;
+}
+.faction-fill{height:100%;border-radius:3px;transition:width 0.5s ease}
+.faction-label{font-size:0.65rem;min-width:50px;text-align:right}
+
+/* ---- FOOTER ---- */
+.footer{
+  text-align:center;padding:2rem 0 0.5rem;
+  font-size:0.68rem;color:var(--text);opacity:0.3;
+  letter-spacing:0.15em;
+}
+
+/* ---- BLINK CURSOR ---- */
+.cursor{animation:blink 1s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ---- BOOT ANIMATION ---- */
+.boot-line{opacity:0;animation:fade-in 0.1s forwards}
+@keyframes fade-in{to{opacity:0.85}}
+
+/* ---- RESPONSIVE ---- */
+@media(max-width:600px){
+  .hub-wrapper{padding:1rem}
+  .nav-grid{grid-template-columns:1fr}
+  .title{font-size:1.8rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     RAIN PARTICLES (CSS-driven background)
+     ============================================================ -->
+<div class="rain-container" id="rainContainer"></div>
+
+<!-- ============================================================
+     MAIN HUB
+     ============================================================ -->
+<div class="hub-wrapper">
+
+  <!-- ========== HEADER ========== -->
+  <header class="header">
+    <h1 class="title">NEON TERMINUS</h1>
+    <div class="subtitle">Neo-Shanghai // 2089</div>
+  </header>
+
+  <!-- ========== AUDIO SECTION ========== -->
+  <section class="section audio-section">
+    <div class="section-header">
+      <span class="dot"></span> AMBIENT FEED
+    </div>
+    <div class="section-body">
+      <div class="audio-frame-wrap">
+        <!-- DM: UPDATE AUDIO HERE — Replace the YouTube embed URL below to change the ambient music for the current scene. Use the embed format: https://www.youtube.com/embed/VIDEO_ID -->
+        <iframe
+          src="https://www.youtube.com/embed/jfKfPfyJRdk?si=placeholder"
+          allow="autoplay; encrypted-media"
+          allowfullscreen
+          title="Ambient Feed"
+        ></iframe>
+        <!-- /DM: END AUDIO -->
+      </div>
+      <!-- DM: UPDATE MOOD HERE — Change the mood text to match the current scene atmosphere -->
+      <div class="audio-mood">// mood: noir_jazz</div>
+      <!-- /DM: END MOOD -->
+    </div>
+  </section>
+
+  <!-- ========== NAVIGATION PANEL ========== -->
+  <section class="section">
+    <div class="section-header">
+      <span class="dot"></span> SYSTEM ACCESS
+    </div>
+    <div class="section-body">
+      <div class="nav-grid">
+        <!-- DM: UPDATE NAV LINKS — Change href and status (online/offline/classified) as assets become available -->
+
+        <a href="assets/character/character_sheet.html" class="nav-card">
+          <div class="icon">&#x1F9EC;</div>
+          <div class="info">
+            <div class="label">CHARACTER DOSSIER</div>
+            <div class="desc">Identity &amp; augmentation records</div>
+          </div>
+          <span class="status online">ONLINE</span>
+        </a>
+
+        <a href="assets/maps/neo_shanghai_district.html" class="nav-card offline" onclick="return false;">
+          <div class="icon">&#x1F5FA;</div>
+          <div class="info">
+            <div class="label">CITY MAP</div>
+            <div class="desc">Neo-Shanghai district overlay</div>
+          </div>
+          <span class="status offline">OFFLINE</span>
+        </a>
+
+        <a href="assets/schematics/" class="nav-card offline" onclick="return false;">
+          <div class="icon">&#x2699;</div>
+          <div class="info">
+            <div class="label">ACTIVE SCHEMATICS</div>
+            <div class="desc">Tech blueprints &amp; diagrams</div>
+          </div>
+          <span class="status classified">CLASSIFIED</span>
+        </a>
+
+        <!-- /DM: END NAV LINKS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TRANSMISSION LOG ========== -->
+  <section class="section">
+    <div class="section-header">
+      <span class="dot"></span> TRANSMISSION LOG
+    </div>
+    <div class="section-body" style="padding:0.8rem;">
+      <div class="log-area" id="logArea">
+        <!-- DM: UPDATE SCENE LOG HERE — Add new log entries at the bottom using this format:
+             <div class="log-line"><span class="timestamp">[HH:MM]</span> Your narrative text here.</div>
+             Available classes: log-line (default green), log-line system (amber), log-line error (red), log-line magenta
+        -->
+
+        <!-- SYSTEM BOOT SEQUENCE — auto-populated on load -->
+
+        <!-- /DM: END SCENE LOG -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== INTEL PANEL ========== -->
+  <section class="section">
+    <div class="section-header">
+      <span class="dot"></span> INTEL
+    </div>
+    <div class="section-body" style="padding:0;">
+
+      <!-- ACTIVE QUESTS -->
+      <div class="collapsible open">
+        <button class="collapsible-toggle" onclick="this.parentElement.classList.toggle('open')">
+          ACTIVE QUESTS <span class="arrow">&#x25B6;</span>
+        </button>
+        <div class="collapsible-content">
+          <div class="collapsible-inner">
+            <!-- DM: UPDATE QUESTS HERE — Add/remove quest items. Use class q-active or q-pending for status badges -->
+            <div class="quest-item">
+              &#x25B8; The Kuroyama Extraction <span class="q-status q-active">ACTIVE</span>
+            </div>
+            <div class="quest-item">
+              &#x25B8; Ghost Signal — Dock 7 <span class="q-status q-pending">PENDING</span>
+            </div>
+            <div class="quest-item" style="opacity:0.4">
+              &#x25B8; [ENCRYPTED — CLEARANCE REQUIRED]
+            </div>
+            <!-- /DM: END QUESTS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- KNOWN NPCs -->
+      <div class="collapsible">
+        <button class="collapsible-toggle" onclick="this.parentElement.classList.toggle('open')">
+          KNOWN CONTACTS <span class="arrow">&#x25B6;</span>
+        </button>
+        <div class="collapsible-content">
+          <div class="collapsible-inner">
+            <!-- DM: UPDATE NPCs HERE -->
+            <div class="npc-item"><span style="color:var(--cyan)">KIRA TANAKA</span> — Fixer, Neon Quarter. Reliable. Owes you one.</div>
+            <div class="npc-item"><span style="color:var(--amber)">BISHOP</span> — Info broker, location unknown. Handle with caution.</div>
+            <div class="npc-item"><span style="color:var(--magenta)">DR. VOSS</span> — Ripperdoc, sub-level 4. Premium chrome, premium prices.</div>
+            <div class="npc-item" style="opacity:0.35"><span style="color:var(--red)">[REDACTED]</span> — ██████████████</div>
+            <!-- /DM: END NPCs -->
+          </div>
+        </div>
+      </div>
+
+      <!-- FACTION STATUS -->
+      <div class="collapsible">
+        <button class="collapsible-toggle" onclick="this.parentElement.classList.toggle('open')">
+          FACTION STATUS <span class="arrow">&#x25B6;</span>
+        </button>
+        <div class="collapsible-content">
+          <div class="collapsible-inner">
+            <!-- DM: UPDATE FACTIONS HERE — Adjust width% for faction-fill and color to reflect standing. Colors: var(--green) friendly, var(--amber) neutral, var(--red) hostile -->
+            <div class="faction-row">
+              <span class="faction-name">Kuroyama Syndicate</span>
+              <div class="faction-bar"><div class="faction-fill" style="width:65%;background:var(--amber)"></div></div>
+              <span class="faction-label" style="color:var(--amber)">NEUTRAL</span>
+            </div>
+            <div class="faction-row">
+              <span class="faction-name">NeoGov Authority</span>
+              <div class="faction-bar"><div class="faction-fill" style="width:30%;background:var(--red)"></div></div>
+              <span class="faction-label" style="color:var(--red)">HOSTILE</span>
+            </div>
+            <div class="faction-row">
+              <span class="faction-name">The Collective</span>
+              <div class="faction-bar"><div class="faction-fill" style="width:80%;background:var(--green)"></div></div>
+              <span class="faction-label" style="color:var(--green)">ALLIED</span>
+            </div>
+            <div class="faction-row">
+              <span class="faction-name">Chrome Reapers</span>
+              <div class="faction-bar"><div class="faction-fill" style="width:20%;background:var(--red)"></div></div>
+              <span class="faction-label" style="color:var(--red)">HOSTILE</span>
+            </div>
+            <div class="faction-row">
+              <span class="faction-name">Silk Road Traders</span>
+              <div class="faction-bar"><div class="faction-fill" style="width:55%;background:var(--amber)"></div></div>
+              <span class="faction-label" style="color:var(--amber)">WARY</span>
+            </div>
+            <div class="faction-row">
+              <span class="faction-name">Ghost Circuit</span>
+              <div class="faction-bar"><div class="faction-fill" style="width:45%;background:var(--cyan)"></div></div>
+              <span class="faction-label" style="color:var(--cyan)">UNKNOWN</span>
+            </div>
+            <!-- /DM: END FACTIONS -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer">
+    // SIGNAL STRENGTH: NOMINAL &nbsp;&bull;&nbsp; ENCRYPTION: AES-256 &nbsp;&bull;&nbsp; SESSION: ACTIVE
+  </footer>
+
+</div><!-- /hub-wrapper -->
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ---- Rain particles ---- */
+  const rc = document.getElementById('rainContainer');
+  const COUNT = 60;
+  for(let i=0;i<COUNT;i++){
+    const s = document.createElement('span');
+    const h = 20 + Math.random()*80;
+    s.style.cssText = `
+      left:${Math.random()*100}%;
+      height:${h}px;
+      opacity:${0.2+Math.random()*0.6};
+      animation-duration:${1+Math.random()*2}s;
+      animation-delay:${Math.random()*3}s;
+    `;
+    rc.appendChild(s);
+  }
+
+  /* ---- Boot sequence in Transmission Log ---- */
+  const log = document.getElementById('logArea');
+  const bootLines = [
+    {text:'NEON TERMINUS v4.7.2 — SYSTEM INITIALIZING...', cls:'system'},
+    {text:'[BOOT] Loading neural-link interface ............ OK', cls:'system'},
+    {text:'[BOOT] Mesh network handshake ................... OK', cls:'system'},
+    {text:'[BOOT] Decryption layer AES-256 ................. OK', cls:'system'},
+    {text:'[BOOT] Scanning local frequencies ............... OK', cls:'system'},
+    {text:'[BOOT] Satellite uplink established — Neo-Shanghai relay', cls:'system'},
+    {text:'[WARN] Unauthorized surveillance detected on channel 7F', cls:'error'},
+    {text:'[BOOT] Counter-intrusion daemon active .......... OK', cls:'system'},
+    {text:'───────────────────────────────────────────────', cls:''},
+    {text:'System online. Welcome back, Runner.', cls:'magenta'},
+    {text:'Maintain operational security at all times.', cls:''},
+    {text:'───────────────────────────────────────────────', cls:''},
+  ];
+
+  let lineIdx = 0;
+  function addBootLine(){
+    if(lineIdx >= bootLines.length) return;
+    const b = bootLines[lineIdx];
+    const div = document.createElement('div');
+    div.className = 'log-line boot-line' + (b.cls ? ' '+b.cls : '');
+    div.style.animationDelay = '0s';
+    if(lineIdx < 6){
+      const ts = document.createElement('span');
+      ts.className = 'timestamp';
+      const t = new Date();
+      ts.textContent = `[${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}]`;
+      div.appendChild(ts);
+      div.appendChild(document.createTextNode(b.text));
+    } else {
+      div.textContent = b.text;
+    }
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+    lineIdx++;
+    if(lineIdx < bootLines.length){
+      setTimeout(addBootLine, 80 + Math.random()*120);
+    } else {
+      // Add blinking cursor at end
+      const cur = document.createElement('span');
+      cur.className = 'cursor';
+      cur.textContent = '█';
+      const lastLine = document.createElement('div');
+      lastLine.className = 'log-line boot-line';
+      lastLine.style.animationDelay = '0s';
+      lastLine.textContent = '> ';
+      lastLine.appendChild(cur);
+      log.appendChild(lastLine);
+      log.scrollTop = log.scrollHeight;
+    }
+  }
+  // Kick off boot sequence after a brief pause
+  setTimeout(addBootLine, 400);
+
+})();
+</script>
+
+</body>
+</html>
