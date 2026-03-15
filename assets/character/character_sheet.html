@@ -468,8 +468,50 @@ body { animation: flicker 8s infinite; }
 /* ==========================================================
    6. INVENTORY — ASSET MANIFEST
    ========================================================== */
+.inventory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+.inventory-slot-count {
+  font-family: var(--display);
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: var(--amber);
+}
+.inventory-filters {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+}
+.filter-btn {
+  font-family: var(--display);
+  font-size: 0.55rem;
+  font-variant: small-caps;
+  letter-spacing: 1.5px;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.filter-btn:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+.filter-btn.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(0,240,255,0.1);
+  box-shadow: 0 0 8px rgba(0,240,255,0.2);
+}
+
 .inventory-list {
-  max-height: 220px;
+  max-height: 400px;
   overflow-y: auto;
   padding-right: 0.4rem;
 }
@@ -478,21 +520,116 @@ body { animation: flicker 8s infinite; }
 .inventory-list::-webkit-scrollbar-thumb { background: var(--cyan); border-radius: 2px; }
 
 .inventory-item {
-  padding: 0.35rem 0;
   border-bottom: 1px solid var(--border);
-  display: flex;
-  gap: 0.6rem;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 .inventory-item:last-child { border-bottom: none; }
+.inventory-item:hover {
+  background: rgba(0,240,255,0.03);
+}
+.inventory-item.hidden {
+  display: none;
+}
+
+.inv-row {
+  padding: 0.4rem 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 .inv-name {
   color: var(--cyan);
   font-size: 0.85rem;
   white-space: nowrap;
 }
-.inv-desc {
-  color: var(--dim);
+.inv-tags {
+  display: flex;
+  gap: 0.3rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.inv-tag-equipped {
+  font-family: var(--display);
+  font-size: 0.5rem;
+  letter-spacing: 1px;
+  color: var(--cyan);
+  border: 1px solid rgba(0,240,255,0.3);
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+}
+.inv-tag-critical {
+  font-family: var(--display);
+  font-size: 0.5rem;
+  letter-spacing: 1px;
+  color: var(--red);
+  border: 1px solid rgba(255,0,60,0.4);
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+  animation: pulse-critical 2s ease-in-out infinite;
+}
+@keyframes pulse-critical {
+  0%, 100% { box-shadow: 0 0 2px rgba(255,0,60,0.3); }
+  50%      { box-shadow: 0 0 8px rgba(255,0,60,0.6); }
+}
+
+/* Critical item border */
+.inventory-item.critical {
+  border-left: 2px solid var(--red);
+  animation: pulse-critical-border 2s ease-in-out infinite;
+}
+@keyframes pulse-critical-border {
+  0%, 100% { border-left-color: rgba(255,0,60,0.5); }
+  50%      { border-left-color: var(--red); }
+}
+
+/* Equipped item border */
+.inventory-item.equipped {
+  border-left: 2px solid var(--cyan);
+}
+/* Critical takes priority over equipped for left border */
+.inventory-item.critical.equipped {
+  border-left-color: var(--red);
+}
+
+/* Expand/collapse detail panel */
+.inv-details {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, padding 0.35s ease;
+  padding: 0 0.5rem;
+  background: rgba(0,0,0,0.25);
+  border-radius: 0 0 3px 3px;
+}
+.inv-details.expanded {
+  max-height: 200px;
+  padding: 0.5rem;
+}
+.inv-detail-row {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.15rem 0;
   font-size: 0.75rem;
 }
+.inv-detail-label {
+  font-family: var(--display);
+  font-size: 0.5rem;
+  letter-spacing: 1.5px;
+  color: var(--dim);
+  min-width: 70px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  padding-top: 0.1rem;
+}
+.inv-detail-value {
+  color: var(--text);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.inv-detail-value.crafting {
+  color: var(--amber);
+}
+
 .inventory-empty {
   color: var(--dim);
   font-style: italic;
@@ -594,6 +731,8 @@ body { animation: flicker 8s infinite; }
 </head>
 <body>
 
+<a href="../../hub.html" style="position:fixed;top:12px;left:16px;z-index:10000;font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:0.15em;color:#ff2d95;text-decoration:none;border:1px solid #ff2d9544;padding:4px 12px;border-radius:2px;background:rgba(0,0,0,0.6);transition:all 0.2s;" onmouseover="this.style.borderColor='#ff2d95';this.style.boxShadow='0 0 8px #ff2d9544'" onmouseout="this.style.borderColor='#ff2d9544';this.style.boxShadow='none'">&laquo; HUB</a>
+
 <div class="sheet">
 
   <!-- ======================================================
@@ -608,7 +747,7 @@ body { animation: flicker 8s infinite; }
       <div class="header-field">
         <label>Designation</label>
         <!-- DM: UPDATE CHARACTER NAME -->
-        <span class="value name-val">AWAITING DESIGNATION<span class="cursor">&nbsp;</span></span>
+        <span class="value name-val">FRANK<span class="cursor">&nbsp;</span></span>
       </div>
       <div class="header-field">
         <label>Classification</label>
@@ -622,12 +761,12 @@ body { animation: flicker 8s infinite; }
       <div class="header-field">
         <label>Race / Origin</label>
         <!-- DM: UPDATE RACE -->
-        <span class="value">PENDING</span>
+        <span class="value">HUMAN</span>
       </div>
       <div class="header-field">
         <label>Background</label>
         <!-- DM: UPDATE BACKGROUND -->
-        <span class="value">PENDING</span>
+        <span class="value">INDEPENDENT TECH FREELANCER</span>
       </div>
     </div>
 
@@ -650,23 +789,23 @@ body { animation: flicker 8s infinite; }
       <!-- DM: UPDATE STR SCORE AND MODIFIER -->
       <div class="ability-card">
         <div class="ability-label">STR</div>
-        <div class="ability-score">10</div>
-        <div class="ability-mod">+0</div>
-        <div class="ability-bar"><div class="ability-bar-fill" style="width: 50%;"></div></div>
+        <div class="ability-score">7</div>
+        <div class="ability-mod">-2</div>
+        <div class="ability-bar"><div class="ability-bar-fill" style="width: 20%;"></div></div>
       </div>
 
       <!-- DM: UPDATE DEX SCORE AND MODIFIER -->
       <div class="ability-card">
         <div class="ability-label">DEX</div>
-        <div class="ability-score">10</div>
-        <div class="ability-mod">+0</div>
-        <div class="ability-bar"><div class="ability-bar-fill" style="width: 50%;"></div></div>
+        <div class="ability-score">12</div>
+        <div class="ability-mod">+1</div>
+        <div class="ability-bar"><div class="ability-bar-fill" style="width: 55%;"></div></div>
       </div>
 
       <!-- DM: UPDATE CON SCORE AND MODIFIER -->
       <div class="ability-card">
         <div class="ability-label">CON</div>
-        <div class="ability-score">10</div>
+        <div class="ability-score">11</div>
         <div class="ability-mod">+0</div>
         <div class="ability-bar"><div class="ability-bar-fill" style="width: 50%;"></div></div>
       </div>
@@ -674,25 +813,25 @@ body { animation: flicker 8s infinite; }
       <!-- DM: UPDATE INT SCORE AND MODIFIER -->
       <div class="ability-card">
         <div class="ability-label">INT</div>
-        <div class="ability-score">10</div>
-        <div class="ability-mod">+0</div>
-        <div class="ability-bar"><div class="ability-bar-fill" style="width: 50%;"></div></div>
+        <div class="ability-score">16</div>
+        <div class="ability-mod">+3</div>
+        <div class="ability-bar"><div class="ability-bar-fill" style="width: 80%;"></div></div>
       </div>
 
       <!-- DM: UPDATE WIS SCORE AND MODIFIER -->
       <div class="ability-card">
         <div class="ability-label">WIS</div>
-        <div class="ability-score">10</div>
-        <div class="ability-mod">+0</div>
-        <div class="ability-bar"><div class="ability-bar-fill" style="width: 50%;"></div></div>
+        <div class="ability-score">12</div>
+        <div class="ability-mod">+1</div>
+        <div class="ability-bar"><div class="ability-bar-fill" style="width: 55%;"></div></div>
       </div>
 
       <!-- DM: UPDATE CHA SCORE AND MODIFIER -->
       <div class="ability-card">
         <div class="ability-label">CHA</div>
-        <div class="ability-score">10</div>
-        <div class="ability-mod">+0</div>
-        <div class="ability-bar"><div class="ability-bar-fill" style="width: 50%;"></div></div>
+        <div class="ability-score">16</div>
+        <div class="ability-mod">+3</div>
+        <div class="ability-bar"><div class="ability-bar-fill" style="width: 80%;"></div></div>
       </div>
 
     </div>
@@ -793,36 +932,36 @@ body { animation: flicker 8s infinite; }
     <div class="skills-columns">
 
       <!-- Column 1 -->
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Acrobatics (DEX)</span>         <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Animal Handling (WIS)</span>     <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Arcana (INT)</span>              <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Athletics (STR)</span>           <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Deception (CHA)</span>           <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">History (INT)</span>             <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Insight (WIS)</span>             <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Intimidation (CHA)</span>        <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Investigation (INT)</span>       <span class="skill-bonus">+0</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Acrobatics (DEX)</span>         <span class="skill-bonus">+1</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Animal Handling (WIS)</span>     <span class="skill-bonus">+1</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Arcana (INT)</span>              <span class="skill-bonus">+3</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Athletics (STR)</span>           <span class="skill-bonus">-2</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Deception (CHA)</span>           <span class="skill-bonus">+3</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">History (INT)</span>             <span class="skill-bonus">+3</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Insight (WIS)</span>             <span class="skill-bonus">+1</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Intimidation (CHA)</span>        <span class="skill-bonus">+3</span></div>
+      <div class="skill-row proficient"><span class="skill-dot"></span><span class="skill-name">Investigation (INT)</span>       <span class="skill-bonus">+5</span></div>
 
       <!-- Column 2 -->
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Medicine (WIS)</span>            <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Nature (INT)</span>              <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Perception (WIS)</span>          <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Performance (CHA)</span>         <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Persuasion (CHA)</span>          <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Religion (INT)</span>            <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Sleight of Hand (DEX)</span>     <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Stealth (DEX)</span>             <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Survival (WIS)</span>            <span class="skill-bonus">+0</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Medicine (WIS)</span>            <span class="skill-bonus">+1</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Nature (INT)</span>              <span class="skill-bonus">+3</span></div>
+      <div class="skill-row proficient"><span class="skill-dot"></span><span class="skill-name">Perception (WIS)</span>          <span class="skill-bonus">+3</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Performance (CHA)</span>         <span class="skill-bonus">+3</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Persuasion (CHA)</span>          <span class="skill-bonus">+3</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Religion (INT)</span>            <span class="skill-bonus">+3</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Sleight of Hand (DEX)</span>     <span class="skill-bonus">+1</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Stealth (DEX)</span>             <span class="skill-bonus">+1</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Survival (WIS)</span>            <span class="skill-bonus">+1</span></div>
 
       <!-- Homebrew Tech Skills -->
       <hr class="skill-divider">
       <div class="skill-section-label">TECH SPECIALIZATIONS</div>
 
       <!-- DM: UPDATE HOMEBREW SKILLS -->
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Hardware Engineering (INT)</span>    <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Software Exploitation (INT)</span>   <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Signal Intelligence (WIS)</span>     <span class="skill-bonus">+0</span></div>
-      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Drone Rigging (DEX)</span>           <span class="skill-bonus">+0</span></div>
+      <div class="skill-row proficient"><span class="skill-dot"></span><span class="skill-name">Hardware Engineering (INT)</span>    <span class="skill-bonus">+5</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Software Exploitation (INT)</span>   <span class="skill-bonus">+3</span></div>
+      <div class="skill-row proficient"><span class="skill-dot"></span><span class="skill-name">Signal Intelligence (INT)</span>     <span class="skill-bonus">+5</span></div>
+      <div class="skill-row">          <span class="skill-dot"></span><span class="skill-name">Drone Rigging (DEX)</span>           <span class="skill-bonus">+1</span></div>
     </div>
   </section>
 
@@ -836,7 +975,7 @@ body { animation: flicker 8s infinite; }
       <!-- DM: UPDATE HP (current/max and bar width%) -->
       <div class="combat-block">
         <div class="combat-label">HIT POINTS</div>
-        <div class="combat-value hp">0 / 0</div>
+        <div class="combat-value hp">8 / 8</div>
         <div class="hp-bar-wrap">
           <div class="hp-bar"><div class="hp-bar-fill" style="width: 100%;"></div></div>
         </div>
@@ -845,13 +984,13 @@ body { animation: flicker 8s infinite; }
       <!-- DM: UPDATE AC -->
       <div class="combat-block">
         <div class="combat-label">ARMOR CLASS</div>
-        <div class="combat-value ac">10</div>
+        <div class="combat-value ac">11</div>
       </div>
 
       <!-- DM: UPDATE INITIATIVE -->
       <div class="combat-block">
         <div class="combat-label">INITIATIVE</div>
-        <div class="combat-value">+0</div>
+        <div class="combat-value">+1</div>
       </div>
 
       <!-- DM: UPDATE SPEED -->
@@ -880,16 +1019,129 @@ body { animation: flicker 8s infinite; }
        ====================================================== -->
   <section class="panel">
     <div class="panel-title">// <span class="accent">ASSET</span> MANIFEST</div>
-    <div class="inventory-list">
-      <!-- DM: ADD INVENTORY ITEMS using this template:
-           <div class="inventory-item">
-             <span class="inv-name">ITEM NAME</span>
-             <span class="inv-desc">Brief description</span>
-           </div>
+
+    <div class="inventory-header">
+      <span class="inventory-slot-count" id="inv-slot-count">INVENTORY: 10/20 SLOTS</span>
+    </div>
+
+    <div class="inventory-filters" id="inv-filters">
+      <button class="filter-btn active" data-filter="all">ALL</button>
+      <button class="filter-btn" data-filter="tools">TOOLS</button>
+      <button class="filter-btn" data-filter="components">COMPONENTS</button>
+      <button class="filter-btn" data-filter="data">DATA</button>
+      <button class="filter-btn" data-filter="misc">MISC</button>
+    </div>
+
+    <div class="inventory-list" id="inv-list">
+      <!-- DM: ADD INVENTORY ITEMS — use data attributes for interactive details
+           data-category: tools|components|data|misc
+           data-equipped: true (optional)
+           data-critical: true (optional)
+           data-desc: description text
+           data-weight: weight string
+           data-properties: properties text
+           data-crafting: crafting text (optional)
       -->
-      <div class="inventory-empty">
-        INVENTORY SCAN PENDING<span class="cursor">&nbsp;</span>
+
+      <div class="inventory-item equipped" data-category="tools" data-equipped="true"
+           data-desc="Passive IR signature scrambler. Defeats basic thermal detection."
+           data-weight="0.1 kg" data-properties="Stealth +2 vs thermal sensors">
+        <div class="inv-row">
+          <span class="inv-name">IR SCRAMBLER PENDANT</span>
+          <span class="inv-tags"><span class="inv-tag-equipped">[EQUIPPED]</span></span>
+        </div>
+        <div class="inv-details"></div>
       </div>
+
+      <div class="inventory-item critical" data-category="tools" data-critical="true"
+           data-desc="Portable RF jammer. 2-second activation, creates 9-second window of EM silence across all bands."
+           data-weight="0.3 kg" data-properties="9-sec jam window. One use per short rest to recharge capacitor.">
+        <div class="inv-row">
+          <span class="inv-name">BROADBAND SIGNAL JAMMER</span>
+          <span class="inv-tags"><span class="inv-tag-critical">CRITICAL</span></span>
+        </div>
+        <div class="inv-details"></div>
+      </div>
+
+      <div class="inventory-item equipped" data-category="tools" data-equipped="true"
+           data-desc="Handheld RF spectrum analyzer. 100 MHz - 6 GHz range. Real-time FFT display."
+           data-weight="0.4 kg" data-properties="Advantage on Signal Intelligence checks when actively scanning">
+        <div class="inv-row">
+          <span class="inv-name">SPECTRUM ANALYZER (HANDHELD)</span>
+          <span class="inv-tags"><span class="inv-tag-equipped">[EQUIPPED]</span></span>
+        </div>
+        <div class="inv-details"></div>
+      </div>
+
+      <div class="inventory-item equipped" data-category="tools" data-equipped="true"
+           data-desc="Clip-on lenses that filter infrared. Reveals IR laser tripwires and active IR illuminators."
+           data-weight="0.05 kg" data-properties="Perception +2 vs IR-based security">
+        <div class="inv-row">
+          <span class="inv-name">IR-CUT CLIP-ON LENSES</span>
+          <span class="inv-tags"><span class="inv-tag-equipped">[EQUIPPED]</span></span>
+        </div>
+        <div class="inv-details"></div>
+      </div>
+
+      <div class="inventory-item equipped" data-category="tools" data-equipped="true"
+           data-desc="Precision electronics multitool. Includes screwdrivers, tweezers, wire strippers, and a tiny soldering tip."
+           data-weight="0.2 kg" data-properties="Required for field repairs and impromptu crafting">
+        <div class="inv-row">
+          <span class="inv-name">MULTITOOL</span>
+          <span class="inv-tags"><span class="inv-tag-equipped">[EQUIPPED]</span></span>
+        </div>
+        <div class="inv-details"></div>
+      </div>
+
+      <div class="inventory-item equipped" data-category="tools" data-equipped="true"
+           data-desc="Old-school FM/AM transceiver. No digital fingerprint. Channel 3 = Park's frequency."
+           data-weight="0.3 kg" data-properties="Untraceable communication. Park on Ch.3">
+        <div class="inv-row">
+          <span class="inv-name">ANALOG RADIO</span>
+          <span class="inv-tags"><span class="inv-tag-equipped">[EQUIPPED]</span></span>
+        </div>
+        <div class="inv-details"></div>
+      </div>
+
+      <div class="inventory-item critical" data-category="data" data-critical="true"
+           data-desc="Flash dump from Lin Mei-Hua's Series 9 implant. 156 MB. Contains TERMINUS proof — distributed neural computation across 43,000 hosts."
+           data-weight="0.01 kg" data-properties="PRIMARY EVIDENCE. Handle with extreme caution.">
+        <div class="inv-row">
+          <span class="inv-name">DATA CHIP [MEI-HUA'S EVIDENCE]</span>
+          <span class="inv-tags"><span class="inv-tag-critical">CRITICAL</span></span>
+        </div>
+        <div class="inv-details"></div>
+      </div>
+
+      <div class="inventory-item" data-category="data"
+           data-desc="Huang Wei sync logs extracted from implant. Contains telemetry data, phone-home timestamps, and server addresses."
+           data-weight="0.01 kg" data-properties="Intelligence value: HIGH. Could trace back to Huang Wei C2 servers.">
+        <div class="inv-row">
+          <span class="inv-name">DRIVE STICK &mdash; SYNC LOGS</span>
+        </div>
+        <div class="inv-details"></div>
+      </div>
+
+      <div class="inventory-item" data-category="data"
+           data-desc="Frank's analysis notes from the relay station examination. Signal patterns, timing data, initial TERMINUS findings."
+           data-weight="0.01 kg" data-properties="Personal notes. Backup analysis data.">
+        <div class="inv-row">
+          <span class="inv-name">DRIVE STICK &mdash; ANALYSIS NOTES</span>
+        </div>
+        <div class="inv-details"></div>
+      </div>
+
+      <div class="inventory-item critical" data-category="components" data-critical="true"
+           data-desc="Extracted Series 9 killswitch circuit board. 22mm x 15mm. Contains MCU, RF transceiver, mystery IC, and neural interface array. Factory-installed secondary kill circuit."
+           data-weight="0.02 kg" data-properties="ACTIVE QUEST ITEM. Reverse-engineering in progress. 6/8 components identified."
+           data-crafting="Can be analyzed at workbench with oscilloscope and logic analyzer">
+        <div class="inv-row">
+          <span class="inv-name">KILLSWITCH PCB</span>
+          <span class="inv-tags"><span class="inv-tag-critical">CRITICAL</span></span>
+        </div>
+        <div class="inv-details"></div>
+      </div>
+
     </div>
   </section>
 
@@ -974,6 +1226,83 @@ body { animation: flicker 8s infinite; }
       card.style.boxShadow = 'none';
     });
   });
+
+  // --- Interactive Inventory System ---
+  (function initInventory() {
+    const items = document.querySelectorAll('.inventory-item');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const slotCount = document.getElementById('inv-slot-count');
+
+    // Build detail panels from data attributes
+    items.forEach(item => {
+      const details = item.querySelector('.inv-details');
+      if (!details) return;
+      const desc = item.dataset.desc;
+      const weight = item.dataset.weight;
+      const props = item.dataset.properties;
+      const crafting = item.dataset.crafting;
+
+      let html = '';
+      if (desc) html += '<div class="inv-detail-row"><span class="inv-detail-label">DESC</span><span class="inv-detail-value">' + desc + '</span></div>';
+      if (weight) html += '<div class="inv-detail-row"><span class="inv-detail-label">WEIGHT</span><span class="inv-detail-value">' + weight + '</span></div>';
+      if (props) html += '<div class="inv-detail-row"><span class="inv-detail-label">PROPERTIES</span><span class="inv-detail-value">' + props + '</span></div>';
+      if (crafting) html += '<div class="inv-detail-row"><span class="inv-detail-label">CRAFTING</span><span class="inv-detail-value crafting">' + crafting + '</span></div>';
+      details.innerHTML = html;
+    });
+
+    // Click to expand/collapse (only one at a time)
+    items.forEach(item => {
+      const row = item.querySelector('.inv-row');
+      if (!row) return;
+      row.addEventListener('click', function() {
+        const details = item.querySelector('.inv-details');
+        const wasExpanded = details.classList.contains('expanded');
+
+        // Collapse all
+        document.querySelectorAll('.inv-details.expanded').forEach(d => d.classList.remove('expanded'));
+
+        // Toggle clicked
+        if (!wasExpanded) {
+          details.classList.add('expanded');
+        }
+      });
+    });
+
+    // Category filters
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        // Update active state
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const filter = btn.dataset.filter;
+
+        // Collapse any expanded details
+        document.querySelectorAll('.inv-details.expanded').forEach(d => d.classList.remove('expanded'));
+
+        // Show/hide items
+        let visibleCount = 0;
+        items.forEach(item => {
+          if (filter === 'all' || item.dataset.category === filter) {
+            item.classList.remove('hidden');
+            visibleCount++;
+          } else {
+            item.classList.add('hidden');
+          }
+        });
+
+        // Update slot count display
+        if (filter === 'all') {
+          slotCount.textContent = 'INVENTORY: ' + items.length + '/20 SLOTS';
+        } else {
+          slotCount.textContent = filter.toUpperCase() + ': ' + visibleCount + ' ITEMS';
+        }
+      });
+    });
+
+    // Set initial count
+    slotCount.textContent = 'INVENTORY: ' + items.length + '/20 SLOTS';
+  })();
 
   // --- Timestamp in the corner ---
   const ts = document.createElement('div');

@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIGINT SPECTRUM ANALYZER v2.7</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cyan:#00ffcc;--pink:#ff3366;--amber:#ffaa00;
+  --bg:#0a0a0f;--panel:#0d0d18;--border:#1a1a2e;
+  --text:#c0c0d0;--text-dim:#606080;
+  --glow-cyan:0 0 6px #00ffcc88,0 0 16px #00ffcc44;
+  --glow-pink:0 0 6px #ff336688,0 0 16px #ff336644;
+  --glow-amber:0 0 6px #ffaa0088,0 0 16px #ffaa0044;
+}
+html{font-size:15px}
+body{
+  font-family:'Share Tech Mono','Courier New',monospace;
+  color:var(--text);background:var(--bg);
+  min-height:100vh;overflow-x:hidden;line-height:1.5;
+}
+
+/* Scanline overlay */
+body::before{
+  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);
+}
+/* CRT vignette */
+body::after{
+  content:'';position:fixed;inset:0;z-index:9998;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.6) 100%);
+}
+
+.container{max-width:1100px;margin:0 auto;padding:1rem 1.2rem 2rem;position:relative;z-index:1}
+
+/* ---- HEADER ---- */
+.header{text-align:center;padding:1.2rem 0 0.6rem;border-bottom:1px solid var(--border)}
+.header h1{
+  font-family:'Orbitron',sans-serif;font-weight:700;
+  font-size:clamp(1.1rem,3.5vw,1.6rem);letter-spacing:0.15em;
+  color:var(--cyan);text-shadow:var(--glow-cyan);
+}
+.header .sub{font-size:0.7rem;color:var(--text-dim);letter-spacing:0.3em;margin-top:0.15rem}
+
+/* ---- SPECTRUM DISPLAY ---- */
+.spectrum-wrapper{
+  position:relative;margin:0.8rem 0 0;
+  border:1px solid #1a3a3a;border-radius:4px;
+  background:#060610;overflow:hidden;
+  box-shadow:inset 0 0 30px rgba(0,255,204,0.03),0 0 12px rgba(0,255,204,0.06);
+}
+.spectrum-wrapper canvas{display:block;width:100%;cursor:crosshair}
+.crosshair-readout{
+  position:absolute;top:8px;right:12px;
+  font-size:0.72rem;color:var(--cyan);text-shadow:var(--glow-cyan);
+  pointer-events:none;text-align:right;opacity:0;transition:opacity 0.15s;
+}
+.crosshair-readout.visible{opacity:1}
+
+/* ---- PANELS ---- */
+.panels{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-top:0.8rem}
+@media(max-width:768px){.panels{grid-template-columns:1fr}}
+
+.panel{
+  background:var(--panel);border:1px solid var(--border);border-radius:4px;
+  padding:0.7rem 0.9rem;
+}
+.panel-title{
+  font-family:'Orbitron',sans-serif;font-size:0.68rem;font-weight:700;
+  color:var(--amber);letter-spacing:0.18em;margin-bottom:0.5rem;
+  text-shadow:var(--glow-amber);
+  border-bottom:1px solid #2a2a1a;padding-bottom:0.3rem;
+}
+
+/* ---- SIGNAL LIST ---- */
+.signal-table{width:100%;border-collapse:collapse;font-size:0.72rem}
+.signal-table th{
+  text-align:left;color:var(--text-dim);font-weight:400;
+  padding:0.2rem 0.4rem;border-bottom:1px solid var(--border);
+  font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;
+}
+.signal-table td{padding:0.25rem 0.4rem;border-bottom:1px solid #111122;cursor:pointer}
+.signal-table tr.sig-row:hover td{background:#0f1525}
+.signal-table tr.sig-row.selected td{background:#0a1a2a;color:var(--cyan)}
+.status-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px}
+.status-dot.IDENTIFIED{background:#00ff88;box-shadow:0 0 4px #00ff88}
+.status-dot.ANALYZING{background:var(--amber);box-shadow:0 0 4px var(--amber);animation:pulse-dot 1.5s infinite}
+.status-dot.UNKNOWN{background:var(--pink);box-shadow:0 0 4px var(--pink)}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* ---- SIGNAL DETAIL ---- */
+.detail-grid{display:grid;grid-template-columns:auto 1fr;gap:0.15rem 0.8rem;font-size:0.72rem}
+.detail-label{color:var(--text-dim);text-transform:uppercase;font-size:0.6rem;letter-spacing:0.1em;align-self:center}
+.detail-value{color:var(--text)}
+.detail-value.encrypted{color:var(--pink);font-style:italic}
+.detail-value.friendly{color:#00ff88}
+.detail-value.hostile{color:var(--pink)}
+.detail-value.caution{color:var(--amber)}
+.detail-value.anomalous{color:#cc44ff;animation:anomalous-flicker 2s infinite}
+@keyframes anomalous-flicker{0%,90%,100%{opacity:1}92%,98%{opacity:0.3}}
+.no-signal{color:var(--text-dim);font-style:italic;font-size:0.72rem;padding:1rem 0;text-align:center}
+
+/* ---- CONTROLS BAR ---- */
+.controls{
+  display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;
+  margin-top:0.8rem;padding:0.6rem 0.9rem;
+  background:var(--panel);border:1px solid var(--border);border-radius:4px;
+}
+.band-btn{
+  font-family:'Share Tech Mono',monospace;font-size:0.68rem;
+  padding:0.3rem 0.7rem;border:1px solid var(--border);border-radius:3px;
+  background:transparent;color:var(--text-dim);cursor:pointer;
+  letter-spacing:0.08em;transition:all 0.15s;
+}
+.band-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.band-btn.active{border-color:var(--cyan);color:var(--cyan);background:#0a1a2a;text-shadow:var(--glow-cyan)}
+.scan-status{
+  margin-left:auto;font-size:0.65rem;color:#00ff88;letter-spacing:0.12em;
+}
+.scan-status::before{
+  content:'';display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:#00ff88;margin-right:6px;box-shadow:0 0 6px #00ff88;
+  animation:pulse-dot 2s infinite;
+}
+.sig-count{font-size:0.65rem;color:var(--amber);letter-spacing:0.1em}
+
+/* ---- BACK LINK ---- */
+.back-link{
+  display:inline-block;margin-top:1rem;font-size:0.72rem;
+  color:var(--text-dim);text-decoration:none;letter-spacing:0.1em;
+  transition:color 0.2s;
+}
+.back-link:hover{color:var(--cyan);text-shadow:var(--glow-cyan)}
+
+/* ---- RESPONSIVE ---- */
+@media(max-width:768px){
+  .controls{justify-content:center}
+  .scan-status{margin-left:0;width:100%;text-align:center}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>SIGINT SPECTRUM ANALYZER v2.7</h1>
+    <div class="sub">PASSIVE ELECTROMAGNETIC SURVEILLANCE PLATFORM</div>
+  </div>
+
+  <!-- DM-CONFIGURABLE SIGNALS: Add/remove/modify signal divs below. The scanner reads data attributes to render. -->
+  <div id="signal-data" style="display:none">
+    <!-- Signal 1: Huang Wei implant telemetry -->
+    <div class="signal"
+         data-freq="0.915"
+         data-unit="GHz"
+         data-strength="-55"
+         data-bandwidth="1MHz"
+         data-modulation="FHSS"
+         data-type="BIOMEDICAL TELEMETRY"
+         data-source="Unknown Biomedical"
+         data-identified="false"
+         data-classification="SUSPICIOUS"></div>
+
+    <!-- Signal 2: Civilian WiFi mesh -->
+    <div class="signal"
+         data-freq="2.4"
+         data-unit="GHz"
+         data-strength="-40"
+         data-bandwidth="20MHz"
+         data-modulation="OFDM"
+         data-type="WIRELESS DATA LINK"
+         data-source="Civilian Infrastructure"
+         data-identified="true"
+         data-classification="NEUTRAL"></div>
+
+    <!-- Signal 3: Oxidizer pirate broadcast -->
+    <div class="signal"
+         data-freq="0.433"
+         data-unit="GHz"
+         data-strength="-70"
+         data-bandwidth="12.5kHz"
+         data-modulation="FM NARROWBAND"
+         data-type="VOICE BROADCAST"
+         data-source="Unknown"
+         data-identified="false"
+         data-classification="UNKNOWN"></div>
+
+    <!-- Signal 4: NSPD drone control -->
+    <div class="signal"
+         data-freq="5.8"
+         data-unit="GHz"
+         data-strength="-35"
+         data-bandwidth="40MHz"
+         data-modulation="DSSS ENCRYPTED"
+         data-type="DRONE C2 LINK"
+         data-source="Law Enforcement"
+         data-identified="false"
+         data-classification="CAUTION"></div>
+
+    <!-- Signal 5: Old Wire's VHF frequency -->
+    <div class="signal"
+         data-freq="0.1475"
+         data-unit="GHz"
+         data-strength="-85"
+         data-bandwidth="6kHz"
+         data-modulation="AM"
+         data-type="NARROWBAND VOICE"
+         data-source="Known Contact"
+         data-identified="true"
+         data-classification="FRIENDLY"></div>
+
+    <!-- Signal 6: The Communion's whisper frequency -->
+    <div class="signal"
+         data-freq="3.7"
+         data-unit="GHz"
+         data-strength="-90"
+         data-bandwidth="200kHz"
+         data-modulation="UNKNOWN"
+         data-type="ANOMALOUS EMISSION"
+         data-source="???"
+         data-identified="false"
+         data-classification="ANOMALOUS"></div>
+  </div>
+
+  <div class="spectrum-wrapper">
+    <canvas id="spectrum"></canvas>
+    <div class="crosshair-readout" id="crosshair"></div>
+  </div>
+
+  <div class="panels">
+    <div class="panel" id="list-panel">
+      <div class="panel-title">DETECTED SIGNALS</div>
+      <table class="signal-table">
+        <thead><tr><th>FREQ</th><th>dBm</th><th>TYPE</th><th>STATUS</th></tr></thead>
+        <tbody id="signal-list"></tbody>
+      </table>
+    </div>
+    <div class="panel" id="detail-panel">
+      <div class="panel-title">SIGNAL ANALYSIS</div>
+      <div id="detail-content"><div class="no-signal">NO SIGNAL SELECTED — CLICK A PEAK OR TABLE ROW</div></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="band-btn" data-min="0.1" data-max="0.3" data-label="VHF">VHF</button>
+    <button class="band-btn" data-min="0.3" data-max="1.0" data-label="UHF">UHF</button>
+    <button class="band-btn" data-min="1.0" data-max="6.0" data-label="SHF">SHF</button>
+    <button class="band-btn active" data-min="0.1" data-max="6.0" data-label="FULL">FULL SPECTRUM</button>
+    <span class="sig-count" id="sig-count">SIGNALS DETECTED: 0</span>
+    <span class="scan-status">PASSIVE SCAN ACTIVE</span>
+  </div>
+
+  <a href="../../hub.html" class="back-link">&larr; RETURN TO TERMINAL</a>
+</div>
+
+<script>
+(function(){
+  // ---- SIGNAL PARSING ----
+  let signals = [];
+  let selectedIdx = -1;
+  let viewMin = 0.1, viewMax = 6.0; // GHz
+
+  function parseSignals(){
+    const els = document.querySelectorAll('#signal-data .signal');
+    signals = [];
+    els.forEach(function(el){
+      signals.push({
+        freq: parseFloat(el.dataset.freq),
+        unit: el.dataset.unit || 'GHz',
+        strength: parseFloat(el.dataset.strength),
+        bandwidth: el.dataset.bandwidth || '—',
+        modulation: el.dataset.modulation || 'UNKNOWN',
+        type: el.dataset.type || 'UNKNOWN',
+        source: el.dataset.source || 'UNKNOWN',
+        identified: el.dataset.identified === 'true',
+        classification: el.dataset.classification || 'UNKNOWN'
+      });
+    });
+    document.getElementById('sig-count').textContent = 'SIGNALS DETECTED: ' + signals.length;
+  }
+
+  function formatFreq(ghz){
+    if(ghz < 1) return (ghz * 1000).toFixed(1) + ' MHz';
+    return ghz.toFixed(2) + ' GHz';
+  }
+
+  // ---- SIGNAL LIST ----
+  function renderList(){
+    const tbody = document.getElementById('signal-list');
+    tbody.innerHTML = '';
+    signals.forEach(function(s,i){
+      const tr = document.createElement('tr');
+      tr.className = 'sig-row' + (i === selectedIdx ? ' selected' : '');
+      const statusLabel = s.identified ? 'IDENTIFIED' : (s.classification === 'UNKNOWN' || s.classification === 'ANOMALOUS' ? 'UNKNOWN' : 'ANALYZING');
+      tr.innerHTML =
+        '<td>' + formatFreq(s.freq) + '</td>' +
+        '<td>' + s.strength + '</td>' +
+        '<td>' + (s.identified ? s.type : (s.classification === 'ANOMALOUS' ? '???' : '—')) + '</td>' +
+        '<td><span class="status-dot ' + statusLabel + '"></span>' + statusLabel + '</td>';
+      tr.addEventListener('click', function(){ selectSignal(i); });
+      tbody.appendChild(tr);
+    });
+  }
+
+  function selectSignal(idx){
+    selectedIdx = idx;
+    renderList();
+    renderDetail();
+  }
+
+  function classColor(c){
+    switch(c){
+      case 'FRIENDLY': return 'friendly';
+      case 'HOSTILE': return 'hostile';
+      case 'CAUTION': case 'SUSPICIOUS': return 'caution';
+      case 'ANOMALOUS': return 'anomalous';
+      default: return '';
+    }
+  }
+
+  function renderDetail(){
+    const el = document.getElementById('detail-content');
+    if(selectedIdx < 0 || selectedIdx >= signals.length){
+      el.innerHTML = '<div class="no-signal">NO SIGNAL SELECTED — CLICK A PEAK OR TABLE ROW</div>';
+      return;
+    }
+    const s = signals[selectedIdx];
+    const id = s.identified;
+    const cc = classColor(s.classification);
+    el.innerHTML =
+      '<div class="detail-grid">' +
+        '<span class="detail-label">CENTER FREQ</span><span class="detail-value">' + formatFreq(s.freq) + '</span>' +
+        '<span class="detail-label">STRENGTH</span><span class="detail-value">' + s.strength + ' dBm</span>' +
+        '<span class="detail-label">BANDWIDTH</span><span class="detail-value">' + (id ? s.bandwidth : 'ANALYZING...') + '</span>' +
+        '<span class="detail-label">MODULATION</span><span class="detail-value' + (id ? '' : ' encrypted') + '">' + (id ? s.modulation : 'ANALYZING...') + '</span>' +
+        '<span class="detail-label">SIGNAL TYPE</span><span class="detail-value">' + (id ? s.type : 'ENCRYPTED') + '</span>' +
+        '<span class="detail-label">SOURCE</span><span class="detail-value' + (id ? '' : ' encrypted') + '">' + (id ? s.source : 'UNKNOWN') + '</span>' +
+        '<span class="detail-label">CLASSIFICATION</span><span class="detail-value ' + cc + '">' + s.classification + '</span>' +
+      '</div>';
+  }
+
+  // ---- BAND BUTTONS ----
+  document.querySelectorAll('.band-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.band-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      viewMin = parseFloat(btn.dataset.min);
+      viewMax = parseFloat(btn.dataset.max);
+    });
+  });
+
+  // ---- CANVAS SPECTRUM ----
+  const canvas = document.getElementById('spectrum');
+  const ctx = canvas.getContext('2d');
+  const crosshairEl = document.getElementById('crosshair');
+  let W, H;
+  const PAD_L = 58, PAD_R = 16, PAD_T = 12, PAD_B = 36;
+  let mouseX = -1, mouseY = -1, mouseIn = false;
+
+  // Noise buffer for smooth-ish noise
+  const NOISE_LEN = 2048;
+  let noiseBuffer = new Float32Array(NOISE_LEN);
+  let noiseTarget = new Float32Array(NOISE_LEN);
+  for(let i = 0; i < NOISE_LEN; i++){
+    noiseBuffer[i] = (Math.random() - 0.5) * 2;
+    noiseTarget[i] = (Math.random() - 0.5) * 2;
+  }
+  let noiseTimer = 0;
+
+  function resize(){
+    const wr = canvas.parentElement;
+    const w = wr.clientWidth;
+    const aspect = window.innerWidth < 768 ? 0.55 : 0.42;
+    const h = Math.round(w * aspect);
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    W = w; H = h;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Map helpers
+  function freqToX(f){ return PAD_L + (f - viewMin) / (viewMax - viewMin) * (W - PAD_L - PAD_R); }
+  function xToFreq(x){ return viewMin + (x - PAD_L) / (W - PAD_L - PAD_R) * (viewMax - viewMin); }
+  function dbmToY(d){
+    // -120 bottom, 0 top
+    return PAD_T + (0 - d) / 120 * (H - PAD_T - PAD_B);
+  }
+  function yToDbm(y){ return 0 - (y - PAD_T) / (H - PAD_T - PAD_B) * 120; }
+
+  // Mouse
+  canvas.addEventListener('mousemove', function(e){
+    const r = canvas.getBoundingClientRect();
+    mouseX = e.clientX - r.left;
+    mouseY = e.clientY - r.top;
+    mouseIn = true;
+    crosshairEl.classList.add('visible');
+    const freq = xToFreq(mouseX);
+    const dbm = yToDbm(mouseY);
+    if(freq >= viewMin && freq <= viewMax && dbm <= 0 && dbm >= -120){
+      crosshairEl.innerHTML = formatFreq(freq) + '<br>' + dbm.toFixed(1) + ' dBm';
+    }
+  });
+  canvas.addEventListener('mouseleave', function(){
+    mouseIn = false;
+    crosshairEl.classList.remove('visible');
+  });
+  canvas.addEventListener('click', function(e){
+    const r = canvas.getBoundingClientRect();
+    const cx = e.clientX - r.left;
+    const clickFreq = xToFreq(cx);
+    // Find closest signal within pixel tolerance
+    let best = -1, bestDist = Infinity;
+    signals.forEach(function(s,i){
+      if(s.freq < viewMin || s.freq > viewMax) return;
+      var d = Math.abs(freqToX(s.freq) - cx);
+      if(d < 20 && d < bestDist){ bestDist = d; best = i; }
+    });
+    if(best >= 0) selectSignal(best);
+  });
+
+  // ---- DRAW ----
+  let frameCount = 0;
+  // Per-signal wobble phase
+  let sigWobble = [];
+
+  function gaussian(){
+    // Box-Muller
+    let u = 0, v = 0;
+    while(u === 0) u = Math.random();
+    while(v === 0) v = Math.random();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  }
+
+  function draw(ts){
+    requestAnimationFrame(draw);
+    frameCount++;
+
+    // Update noise targets periodically
+    noiseTimer++;
+    if(noiseTimer > 4){
+      noiseTimer = 0;
+      for(let i = 0; i < NOISE_LEN; i++){
+        noiseTarget[i] = (Math.random() - 0.5) * 2;
+      }
+    }
+    // Lerp noise
+    for(let i = 0; i < NOISE_LEN; i++){
+      noiseBuffer[i] += (noiseTarget[i] - noiseBuffer[i]) * 0.18;
+    }
+
+    // Ensure wobble array sized
+    while(sigWobble.length < signals.length) sigWobble.push(Math.random() * Math.PI * 2);
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    ctx.fillStyle = '#060610';
+    ctx.fillRect(0, 0, W, H);
+
+    const plotL = PAD_L, plotR = W - PAD_R, plotT = PAD_T, plotB = H - PAD_B;
+    const plotW = plotR - plotL, plotH = plotB - plotT;
+
+    // Grid
+    ctx.strokeStyle = '#0a2a2a';
+    ctx.lineWidth = 0.5;
+
+    // Horizontal grid: every 20 dBm
+    for(let db = 0; db >= -120; db -= 20){
+      const y = dbmToY(db);
+      ctx.beginPath(); ctx.moveTo(plotL, y); ctx.lineTo(plotR, y); ctx.stroke();
+      ctx.fillStyle = '#335555';
+      ctx.font = '9px Share Tech Mono, monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(db + '', plotL - 6, y + 3);
+    }
+    // dBm label
+    ctx.save();
+    ctx.translate(10, plotT + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#335555';
+    ctx.font = '9px Share Tech Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('dBm', 0, 0);
+    ctx.restore();
+
+    // Vertical grid: frequency ticks
+    var freqSpan = viewMax - viewMin;
+    var tickStep;
+    if(freqSpan <= 0.3) tickStep = 0.025;
+    else if(freqSpan <= 1) tickStep = 0.1;
+    else if(freqSpan <= 3) tickStep = 0.5;
+    else tickStep = 1.0;
+
+    var fStart = Math.ceil(viewMin / tickStep) * tickStep;
+    for(var f = fStart; f <= viewMax; f += tickStep){
+      var x = freqToX(f);
+      ctx.beginPath(); ctx.moveTo(x, plotT); ctx.lineTo(x, plotB); ctx.stroke();
+      ctx.fillStyle = '#335555';
+      ctx.font = '9px Share Tech Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(formatFreq(f), x, plotB + 14);
+    }
+
+    // ---- SPECTRUM TRACE ----
+    // Resolution: 1 pixel per data point across plot
+    var steps = Math.round(plotW);
+    ctx.beginPath();
+    ctx.moveTo(plotL, plotB);
+
+    for(var p = 0; p <= steps; p++){
+      var freq = viewMin + (p / steps) * freqSpan;
+      // Start with noise floor around -100 dBm
+      var noiseIdx = Math.floor((p / steps) * (NOISE_LEN - 1));
+      var nVal = noiseBuffer[noiseIdx] * 5; // +-5 dB noise
+      var dbm = -100 + nVal;
+
+      // Add signal peaks (Lorentzian / Cauchy shape for realistic RF peaks)
+      for(var si = 0; si < signals.length; si++){
+        var sig = signals[si];
+        if(sig.freq < viewMin - 0.5 || sig.freq > viewMax + 0.5) continue;
+        // Bandwidth in GHz
+        var bwStr = sig.bandwidth.toUpperCase();
+        var bwGhz;
+        if(bwStr.indexOf('KHZ') >= 0) bwGhz = parseFloat(bwStr) / 1e6;
+        else if(bwStr.indexOf('MHZ') >= 0) bwGhz = parseFloat(bwStr) / 1e3;
+        else bwGhz = parseFloat(bwStr);
+        if(isNaN(bwGhz) || bwGhz <= 0) bwGhz = 0.005;
+
+        // Half-width at half-max
+        var gamma = bwGhz / 2;
+        // Minimum gamma for visibility
+        var minGamma = freqSpan / steps * 2.5;
+        if(gamma < minGamma) gamma = minGamma;
+
+        var df = freq - sig.freq;
+        // Lorentzian peak
+        var peak = 1.0 / (1.0 + (df * df) / (gamma * gamma));
+        // Wobble
+        sigWobble[si] += 0.02 + si * 0.005;
+        var wobble = Math.sin(sigWobble[si]) * 1.5;
+        var sigDbm = sig.strength + wobble;
+        // Add contribution: raise from noise floor toward signal strength
+        var contribution = peak * (sigDbm - dbm);
+        if(contribution > 0) dbm += contribution;
+      }
+
+      // Clamp
+      if(dbm > 0) dbm = 0;
+      if(dbm < -120) dbm = -120;
+      var y = dbmToY(dbm);
+      ctx.lineTo(plotL + p, y);
+    }
+    ctx.lineTo(plotR, plotB);
+    ctx.closePath();
+
+    // Fill gradient
+    var grad = ctx.createLinearGradient(0, plotT, 0, plotB);
+    grad.addColorStop(0, 'rgba(0,255,204,0.35)');
+    grad.addColorStop(0.5, 'rgba(0,255,204,0.10)');
+    grad.addColorStop(1, 'rgba(0,255,204,0.02)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Trace line
+    // Redraw line on top
+    ctx.beginPath();
+    ctx.moveTo(plotL, plotB);
+    for(var p = 0; p <= steps; p++){
+      var freq = viewMin + (p / steps) * freqSpan;
+      var noiseIdx = Math.floor((p / steps) * (NOISE_LEN - 1));
+      var nVal = noiseBuffer[noiseIdx] * 5;
+      var dbm = -100 + nVal;
+      for(var si = 0; si < signals.length; si++){
+        var sig = signals[si];
+        if(sig.freq < viewMin - 0.5 || sig.freq > viewMax + 0.5) continue;
+        var bwStr = sig.bandwidth.toUpperCase();
+        var bwGhz;
+        if(bwStr.indexOf('KHZ') >= 0) bwGhz = parseFloat(bwStr) / 1e6;
+        else if(bwStr.indexOf('MHZ') >= 0) bwGhz = parseFloat(bwStr) / 1e3;
+        else bwGhz = parseFloat(bwStr);
+        if(isNaN(bwGhz) || bwGhz <= 0) bwGhz = 0.005;
+        var gamma = bwGhz / 2;
+        var minGamma = freqSpan / steps * 2.5;
+        if(gamma < minGamma) gamma = minGamma;
+        var df = freq - sig.freq;
+        var peak = 1.0 / (1.0 + (df * df) / (gamma * gamma));
+        var wobble = Math.sin(sigWobble[si]) * 1.5;
+        var sigDbm = sig.strength + wobble;
+        var contribution = peak * (sigDbm - dbm);
+        if(contribution > 0) dbm += contribution;
+      }
+      if(dbm > 0) dbm = 0;
+      if(dbm < -120) dbm = -120;
+      ctx.lineTo(plotL + p, dbmToY(dbm));
+    }
+    ctx.strokeStyle = '#00ffcc';
+    ctx.lineWidth = 1.2;
+    ctx.shadowColor = '#00ffcc';
+    ctx.shadowBlur = 6;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // ---- SIGNAL PEAK MARKERS ----
+    signals.forEach(function(s, i){
+      if(s.freq < viewMin || s.freq > viewMax) return;
+      var x = freqToX(s.freq);
+      var wobble = Math.sin(sigWobble[i]) * 1.5;
+      var y = dbmToY(s.strength + wobble);
+      var isSelected = (i === selectedIdx);
+
+      // Glow dot
+      ctx.beginPath();
+      ctx.arc(x, y, isSelected ? 5 : 3, 0, Math.PI * 2);
+      var dotColor;
+      switch(s.classification){
+        case 'FRIENDLY': dotColor = '#00ff88'; break;
+        case 'HOSTILE': dotColor = '#ff3366'; break;
+        case 'CAUTION': case 'SUSPICIOUS': dotColor = '#ffaa00'; break;
+        case 'ANOMALOUS': dotColor = '#cc44ff'; break;
+        default: dotColor = '#00ffcc';
+      }
+      ctx.fillStyle = dotColor;
+      ctx.shadowColor = dotColor;
+      ctx.shadowBlur = isSelected ? 14 : 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Label
+      if(isSelected){
+        ctx.fillStyle = dotColor;
+        ctx.font = '10px Share Tech Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = dotColor;
+        ctx.shadowBlur = 4;
+        ctx.fillText(formatFreq(s.freq), x, y - 10);
+        ctx.shadowBlur = 0;
+
+        // Vertical marker line
+        ctx.strokeStyle = dotColor;
+        ctx.lineWidth = 0.5;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.moveTo(x, plotT); ctx.lineTo(x, plotB); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    });
+
+    // ---- CROSSHAIR ----
+    if(mouseIn && mouseX >= plotL && mouseX <= plotR && mouseY >= plotT && mouseY <= plotB){
+      ctx.strokeStyle = 'rgba(0,255,204,0.25)';
+      ctx.lineWidth = 0.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(mouseX, plotT); ctx.lineTo(mouseX, plotB); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(plotL, mouseY); ctx.lineTo(plotR, mouseY); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Border
+    ctx.strokeStyle = '#1a3a3a';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(plotL, plotT, plotW, plotH);
+  }
+
+  // ---- AUTO-SYNC ----
+  function autoSync(){
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', window.location.href + '?t=' + Date.now(), true);
+    xhr.onload = function(){
+      if(xhr.status === 200){
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(xhr.responseText, 'text/html');
+        var newData = doc.getElementById('signal-data');
+        if(newData){
+          document.getElementById('signal-data').innerHTML = newData.innerHTML;
+          parseSignals();
+          renderList();
+          if(selectedIdx >= signals.length) selectedIdx = -1;
+          renderDetail();
+        }
+      }
+    };
+    xhr.send();
+  }
+  setInterval(autoSync, 10000);
+
+  // ---- INIT ----
+  parseSignals();
+  renderList();
+  renderDetail();
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

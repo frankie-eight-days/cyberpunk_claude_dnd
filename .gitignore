@@ -1,0 +1,10 @@
+# macOS
+.DS_Store
+
+# Game save data (player-specific)
+character_sheet.md
+consequence_ledger.md
+npc_relationships.md
+quest_log.md
+session_journal.md
+world_state.md

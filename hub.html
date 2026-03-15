@@ -248,11 +248,141 @@ body::after{
 .boot-line{opacity:0;animation:fade-in 0.1s forwards}
 @keyframes fade-in{to{opacity:0.85}}
 
+/* ---- THREAT MONITOR (Consequence Clocks) ---- */
+.threat-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:1rem;
+}
+.threat-clock{
+  background:#08081a;border:1px solid var(--border);border-radius:4px;
+  padding:0.8rem 1rem;position:relative;overflow:hidden;
+}
+.threat-clock.imminent{border-color:var(--amber);box-shadow:0 0 10px #ffaa0033}
+.threat-clock.overdue{border-color:var(--red);box-shadow:0 0 10px #ff224433;animation:pulse-threat 1.5s infinite}
+.threat-clock.unknown{border-color:var(--magenta);box-shadow:0 0 10px #ff00aa22}
+@keyframes pulse-threat{0%,100%{opacity:1}50%{opacity:0.7}}
+.threat-label{
+  font-family:'Orbitron',sans-serif;font-size:0.65rem;
+  letter-spacing:0.15em;color:var(--text);margin-bottom:0.5rem;
+}
+.threat-time{
+  font-family:'Orbitron',sans-serif;font-size:1.4rem;
+  color:#fff;letter-spacing:0.08em;margin-bottom:0.4rem;
+}
+.threat-time.unknown-time{color:var(--magenta);animation:pulse-threat 2s infinite}
+.threat-bar{
+  height:4px;background:#1a1a2e;border-radius:2px;overflow:hidden;
+}
+.threat-fill{
+  height:100%;border-radius:2px;transition:width 0.8s ease;
+}
+.threat-fill.safe{background:var(--green)}
+.threat-fill.warning{background:var(--amber)}
+.threat-fill.critical{background:var(--red);animation:pulse-bar 1s infinite}
+@keyframes pulse-bar{0%,100%{opacity:1}50%{opacity:0.5}}
+.threat-desc{
+  font-size:0.68rem;color:var(--text);opacity:0.5;margin-top:0.4rem;
+}
+.game-clock{
+  display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem;
+  padding:0.6rem 1rem;background:#08081a;border:1px solid var(--border);
+  border-radius:4px;
+}
+.game-clock-label{
+  font-family:'Orbitron',sans-serif;font-size:0.65rem;
+  letter-spacing:0.15em;color:var(--cyan);
+}
+.game-clock-time{
+  font-family:'Orbitron',sans-serif;font-size:1.6rem;
+  color:#fff;letter-spacing:0.1em;text-shadow:var(--glow-cyan);
+}
+.game-clock-date{
+  font-size:0.7rem;color:var(--text);opacity:0.5;margin-left:auto;
+}
+
+/* ---- NPC COMM PANEL ---- */
+.comm-message{
+  padding:0.8rem 1rem;border-bottom:1px solid #ffffff08;
+  cursor:pointer;transition:background 0.2s;position:relative;
+}
+.comm-message:last-child{border-bottom:none}
+.comm-message:hover{background:#00f0ff06}
+.comm-message.unread{border-left:2px solid var(--cyan)}
+.comm-message.unread::after{
+  content:'';position:absolute;top:0.8rem;right:1rem;
+  width:6px;height:6px;border-radius:50%;
+  background:var(--cyan);box-shadow:var(--glow-cyan);
+  animation:pulse-dot 2s infinite;
+}
+.comm-sender{
+  font-family:'Orbitron',sans-serif;font-size:0.7rem;
+  letter-spacing:0.12em;color:var(--cyan);margin-bottom:0.2rem;
+}
+.comm-timestamp{
+  font-size:0.6rem;color:var(--text);opacity:0.4;
+  margin-left:0.5rem;font-family:'Share Tech Mono',monospace;
+}
+.comm-body{
+  font-size:0.78rem;color:var(--text);line-height:1.5;
+  font-style:italic;opacity:0.8;
+}
+.comm-badge{
+  display:inline-block;font-size:0.55rem;padding:0.1rem 0.35rem;
+  border-radius:2px;margin-left:0.4rem;vertical-align:middle;
+  font-family:'Orbitron',sans-serif;letter-spacing:0.1em;
+}
+.comm-badge.urgent{color:var(--red);border:1px solid var(--red)}
+.comm-badge.new{color:var(--green);border:1px solid var(--green)}
+.comm-unread-count{
+  font-size:0.65rem;color:var(--cyan);margin-left:auto;
+  animation:pulse-dot 2s infinite;
+}
+
+/* ---- NEWS TICKER ---- */
+.ticker-wrap{
+  overflow:hidden;background:#05050a;
+  border:1px solid var(--border);border-radius:4px;
+  padding:0.5rem 0;margin:1.5rem 0;position:relative;
+}
+.ticker-wrap::before,.ticker-wrap::after{
+  content:'';position:absolute;top:0;bottom:0;width:40px;z-index:2;
+}
+.ticker-wrap::before{left:0;background:linear-gradient(90deg,#05050a,transparent)}
+.ticker-wrap::after{right:0;background:linear-gradient(270deg,#05050a,transparent)}
+.ticker-label{
+  position:absolute;left:0;top:0;bottom:0;z-index:3;
+  display:flex;align-items:center;padding:0 0.8rem;
+  background:#05050a;border-right:1px solid var(--red);
+  font-family:'Orbitron',sans-serif;font-size:0.6rem;
+  letter-spacing:0.15em;color:var(--red);
+}
+.ticker-track{
+  display:flex;white-space:nowrap;
+  animation:ticker-scroll 60s linear infinite;
+  padding-left:120px;
+}
+@keyframes ticker-scroll{
+  0%{transform:translateX(0)}
+  100%{transform:translateX(-50%)}
+}
+.ticker-item{
+  font-size:0.72rem;color:var(--amber);
+  padding:0 2rem;letter-spacing:0.05em;opacity:0.8;
+}
+.ticker-item .ticker-sep{
+  color:var(--red);margin:0 1.5rem;opacity:0.4;
+}
+
 /* ---- RESPONSIVE ---- */
 @media(max-width:600px){
   .hub-wrapper{padding:1rem}
   .nav-grid{grid-template-columns:1fr}
   .title{font-size:1.8rem}
+  .threat-grid{grid-template-columns:1fr}
+  .game-clock{flex-wrap:wrap}
+  .game-clock-date{margin-left:0;width:100%}
+  .ticker-label{font-size:0.5rem;padding:0 0.5rem}
+  .ticker-track{padding-left:80px}
 }
 </style>
 </head>
@@ -283,7 +413,7 @@ body::after{
       <div class="audio-frame-wrap">
         <!-- DM: UPDATE AUDIO HERE — Replace the YouTube embed URL below to change the ambient music for the current scene. Use the embed format: https://www.youtube.com/embed/VIDEO_ID -->
         <iframe
-          src="https://www.youtube.com/embed/jfKfPfyJRdk?si=placeholder"
+          src="https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1&loop=1"
           allow="autoplay; encrypted-media"
           allowfullscreen
           title="Ambient Feed"
@@ -314,25 +444,114 @@ body::after{
           <span class="status online">ONLINE</span>
         </a>
 
-        <a href="assets/maps/neo_shanghai_district.html" class="nav-card offline" onclick="return false;">
+        <a href="assets/maps/neo_shanghai_district.html" class="nav-card" target="_blank">
           <div class="icon">&#x1F5FA;</div>
           <div class="info">
             <div class="label">CITY MAP</div>
             <div class="desc">Neo-Shanghai district overlay</div>
           </div>
-          <span class="status offline">OFFLINE</span>
+          <span class="status online">ONLINE</span>
         </a>
 
-        <a href="assets/schematics/" class="nav-card offline" onclick="return false;">
-          <div class="icon">&#x2699;</div>
+        <a href="assets/schematics/killswitch_pcb.html" class="nav-card" target="_blank">
+          <div class="icon">&#x1F4CB;</div>
           <div class="info">
-            <div class="label">ACTIVE SCHEMATICS</div>
-            <div class="desc">Tech blueprints &amp; diagrams</div>
+            <div class="label">KILLSWITCH PCB</div>
+            <div class="desc">Series 9 board analysis</div>
           </div>
-          <span class="status classified">CLASSIFIED</span>
+          <span class="status online">ONLINE</span>
+        </a>
+
+        <a href="assets/schematics/signal_scanner.html" class="nav-card" target="_blank">
+          <div class="icon">&#x1F4E1;</div>
+          <div class="info">
+            <div class="label">SIGNAL SCANNER</div>
+            <div class="desc">SIGINT spectrum analyzer</div>
+          </div>
+          <span class="status online">ONLINE</span>
+        </a>
+
+        <a href="assets/maps/dive_interface.html" class="nav-card offline" onclick="return false;">
+          <div class="icon">&#x1F310;</div>
+          <div class="info">
+            <div class="label">NEURAL DIVE</div>
+            <div class="desc">Network intrusion interface</div>
+          </div>
+          <span class="status classified">STANDBY</span>
         </a>
 
         <!-- /DM: END NAV LINKS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== THREAT MONITOR (Consequence Clocks) ========== -->
+  <section class="section" id="threatMonitor">
+    <div class="section-header">
+      <span class="dot" style="background:var(--red);box-shadow:0 0 8px #ff224488"></span> THREAT MONITOR
+    </div>
+    <div class="section-body">
+      <!-- DM: UPDATE GAME CLOCK — Change data-time to current in-game time, data-date to current in-game date -->
+      <div class="game-clock" id="gameClock" data-time="16:12" data-date="Day 1 — March 15, 2089">
+        <span class="game-clock-label">LOCAL TIME</span>
+        <span class="game-clock-time">16:12</span>
+        <span class="game-clock-date">Day 1 — March 15, 2089</span>
+      </div>
+
+      <div class="threat-grid">
+        <!-- DM: UPDATE THREATS — Add/remove threat-clock divs. Classes: (none)=safe, imminent=amber, overdue=red, unknown=purple.
+             threat-fill classes: safe=green, warning=amber, critical=red. Width = % of time elapsed. -->
+
+        <div class="threat-clock imminent">
+          <div class="threat-label">NSPD DAY SHIFT</div>
+          <div class="threat-time">05:30</div>
+          <div class="threat-bar"><div class="threat-fill warning" style="width:90%"></div></div>
+          <div class="threat-desc">Camera probe + VHF logs — sealed under Park's case file (72hr hold)</div>
+        </div>
+
+        <div class="threat-clock imminent">
+          <div class="threat-label">OLD WIRE — VOLUNTARY ABSENCE</div>
+          <div class="threat-time">48:00</div>
+          <div class="threat-bar"><div class="threat-fill warning" style="width:12%"></div></div>
+          <div class="threat-desc">"I know what this is." Left voluntarily. 48hr return window.</div>
+        </div>
+
+        <div class="threat-clock overdue">
+          <div class="threat-label">HUANG WEI GRID SWEEP</div>
+          <div class="threat-time">05:00</div>
+          <div class="threat-bar"><div class="threat-fill critical" style="width:95%"></div></div>
+          <div class="threat-desc">Sectors Jade-7 to Jade-12 — camera + signal monitoring active</div>
+        </div>
+
+        <div class="threat-clock unknown">
+          <div class="threat-label">IMPLANT PHONE-HOME</div>
+          <div class="threat-time unknown-time">??:??</div>
+          <div class="threat-bar"><div class="threat-fill critical" style="width:50%"></div></div>
+          <div class="threat-desc">9-sec jammer window — location may be compromised</div>
+        </div>
+
+        <div class="threat-clock overdue">
+          <div class="threat-label">FIRMWARE UPDATE — KEY DEATH</div>
+          <div class="threat-time">MON</div>
+          <div class="threat-bar"><div class="threat-fill critical" style="width:30%"></div></div>
+          <div class="threat-desc">"Network Health Initiative" — firmware push may rotate static auth key. ~48hrs.</div>
+        </div>
+
+        <div class="threat-clock imminent">
+          <div class="threat-label">HW CONTRACTORS → VIK'S BLOCK</div>
+          <div class="threat-time">~20:00</div>
+          <div class="threat-bar"><div class="threat-fill warning" style="width:60%"></div></div>
+          <div class="threat-desc">Door-to-door sweep. 4-6 hours from Vik's clinic.</div>
+        </div>
+
+        <div class="threat-clock imminent">
+          <div class="threat-label">PARK'S SEALED FILE</div>
+          <div class="threat-time">~72:00</div>
+          <div class="threat-bar"><div class="threat-fill safe" style="width:15%"></div></div>
+          <div class="threat-desc">Legal hold on Liyang corridor footage — can be overridden by brass</div>
+        </div>
+
+        <!-- /DM: END THREATS -->
       </div>
     </div>
   </section>
@@ -350,6 +569,67 @@ body::after{
         -->
 
         <!-- SYSTEM BOOT SEQUENCE — auto-populated on load -->
+
+        <div class="log-line"><span class="timestamp">[02:47]</span> Workshop. Rain. A signal in the noise.</div>
+        <div class="log-line"><span class="timestamp">[03:04]</span> Chirp decoded — ASCII payload: LIN MEI-HUA / HELP ME. Coordinates: Liyang &amp; 14th.</div>
+        <div class="log-line system"><span class="timestamp">[03:08]</span> [WARN] NSPD camera probe — honeypot detected. Connection severed.</div>
+        <div class="log-line"><span class="timestamp">[03:12]</span> Dead-drop message sent to Old Wire. Moving to coordinates.</div>
+        <div class="log-line"><span class="timestamp">[03:34]</span> Contact: Detective Park Sojin, NSPD Cybercrime. Badge 4471. Claims department is compromised.</div>
+        <div class="log-line"><span class="timestamp">[03:41]</span> Relay Station 14-E. Found Lin Mei-Hua. Huang Wei researcher. Three days in hiding.</div>
+        <div class="log-line error"><span class="timestamp">[03:42]</span> TERMINUS — hidden process in Series 9 implants. 43,000 hosts. Distributed neural computation.</div>
+        <div class="log-line"><span class="timestamp">[03:52]</span> Signal jammer active. En route to Vik's clinic with Park providing transport.</div>
+        <div class="log-line"><span class="timestamp">[04:10]</span> Vik's clinic. Implant extraction underway. Flash dump in progress — 156 MB recovered.</div>
+        <div class="log-line error"><span class="timestamp">[04:14]</span> KILLSWITCH ACTIVATED. Factory-installed secondary circuit. EM pulse to neural tissue.</div>
+        <div class="log-line system"><span class="timestamp">[04:18]</span> Mei-Hua stabilized. Critical condition. Neural damage severe. Prognosis unknown.</div>
+        <div class="log-line magenta"><span class="timestamp">[04:22]</span> Killswitch PCB secured for reverse engineering. Data copied. Evidence distributed.</div>
+        <div class="log-line magenta"><span class="timestamp">[04:35]</span> Session 1 complete. The clock is running.</div>
+        <div class="log-line system"><span class="timestamp">[04:41]</span> ─── SESSION 2: DEAD SIGNALS ───</div>
+        <div class="log-line error"><span class="timestamp">[04:41]</span> NSPD dispatch: Huang Wei grid access request — sectors Jade-7 through Jade-12. Effective 05:00. Manhunt protocol.</div>
+        <div class="log-line"><span class="timestamp">[04:42]</span> Park: Cannot scrub Liyang corridor footage. Sealed under case file — 72hr legal hold. Clock is ticking.</div>
+        <div class="log-line"><span class="timestamp">[04:53]</span> En route to Rusted Mile. Surface streets, camera blind spots. Grid boundary cleared.</div>
+        <div class="log-line system"><span class="timestamp">[04:55]</span> Workshop. Secure. Inventory laid out. Oscilloscope online.</div>
+        <div class="log-line"><span class="timestamp">[04:55]</span> New asset: Park's burner phone. Encrypted messenger loaded. 12hr check-in window.</div>
+        <div class="log-line magenta"><span class="timestamp">[04:58]</span> Old Wire checks dead-drop in 2 minutes.</div>
+        <div class="log-line"><span class="timestamp">[04:59]</span> Message sent to Han — arm delayed another day.</div>
+        <div class="log-line system"><span class="timestamp">[05:00]</span> Sleep cycle initiated. 4 hours.</div>
+        <div class="log-line system"><span class="timestamp">[09:02]</span> ─── WAKE ───</div>
+        <div class="log-line error"><span class="timestamp">[09:02]</span> Han took arm to Baker St chop shop. Client lost.</div>
+        <div class="log-line magenta"><span class="timestamp">[09:02]</span> Old Wire: dead-drop read 05:03. Reply 05:47 — "I'm coming to you." Never arrived. 3+ hours overdue.</div>
+        <div class="log-line"><span class="timestamp">[09:05]</span> Ping sent to Wire. No read receipt. Channel open.</div>
+        <div class="log-line system"><span class="timestamp">[09:10]</span> Killswitch PCB analysis begun. USB microscope + oscilloscope + schematic editor.</div>
+        <div class="log-line error"><span class="timestamp">[10:15]</span> KILLSWITCH: Independent parallel system. Own MCU (custom ASIC), own antenna (915 MHz), own power (charge pump → ~45V). Always armed.</div>
+        <div class="log-line error"><span class="timestamp">[10:15]</span> Trigger protocol unknown. ASIC is a black box — no JTAG, no debug, proprietary Huang Wei silicon.</div>
+        <div class="log-line"><span class="timestamp">[10:15]</span> Schematic ~70% complete. Analog/RF front end mapped. Digital core unreadable. 4 mystery GPIO test pads.</div>
+        <div class="log-line system"><span class="timestamp">[10:15]</span> Wire still silent. No read receipt on ping.</div>
+        <div class="log-line"><span class="timestamp">[10:20]</span> GPIO probing — Pad 2: UART TX confirmed (boot chatter). Pad 3: clock @ 1.8432 MHz. Pad 4: bidirectional, possible debug data.</div>
+        <div class="log-line error"><span class="timestamp">[10:35]</span> Boot capture failed. Bench PSU transient noise masking 150ms startup sequence. Need cleaner supply.</div>
+        <div class="log-line system"><span class="timestamp">[10:48]</span> Debug port exists. Can't read it. Baud rate non-standard. ASIC speaks once on boot and goes silent.</div>
+        <div class="log-line"><span class="timestamp">[10:52]</span> Moving to Old Wire's shop. IR scrambler active, hood up.</div>
+        <div class="log-line"><span class="timestamp">[10:58]</span> Wire's Workshop. Door unlocked. Mains cut deliberately. Shop intact — not searched.</div>
+        <div class="log-line magenta"><span class="timestamp">[11:00]</span> Note from Wire: "I know what this is." Gone voluntarily. Took tools + pendant + hidden compartment contents. Says 48 hours.</div>
+        <div class="log-line system"><span class="timestamp">[11:00]</span> Wire tip: Keysight PSU available. Try baud 230400. "Don't trust the clock line. It's not a clock."</div>
+        <div class="log-line error"><span class="timestamp">[11:04]</span> REALIZATION: Pad 3 is not a clock. 1.8432 MHz continuous data beacon. Board radiates when powered. Possible location leash.</div>
+        <div class="log-line error"><span class="timestamp">[11:04]</span> Board was powered ~20-30 min at workshop this morning. If Huang Wei has passive 1.8432 MHz listeners — workshop location may be compromised.</div>
+        <div class="log-line"><span class="timestamp">[11:10]</span> Jammer modded — crude 1.8432 MHz notch filter. Beacon suppressed. Working from Wire's bench.</div>
+        <div class="log-line magenta"><span class="timestamp">[11:38]</span> ████ UART BOOT DUMP CAPTURED — FULL DECODE ████</div>
+        <div class="log-line error"><span class="timestamp">[11:38]</span> AUTH KEY: STATIC. Single key across all Series 9 units. D7A3:91F0:BC48:550E</div>
+        <div class="log-line error"><span class="timestamp">[11:38]</span> Kill trigger: 915 MHz RF only. Short range. Requires physical infrastructure near target.</div>
+        <div class="log-line error"><span class="timestamp">[11:38]</span> Beacon: continuous UID broadcast via 1.8432 MHz. 0.8mW. Each implant whispers its identity.</div>
+        <div class="log-line system"><span class="timestamp">[11:38]</span> No safety override. No disarm function. Single-use fuse. 43,000 implants. One key.</div>
+        <div class="log-line system"><span class="timestamp">[11:45]</span> 4-gig analysis file opened. Mei-Hua's 3-day investigation. Structured archive.</div>
+        <div class="log-line error"><span class="timestamp">[12:30]</span> TERMINUS: Distributed neural computation. Implants co-opt host brain as co-processor. Hosts unaware.</div>
+        <div class="log-line error"><span class="timestamp">[12:45]</span> DIGITAL PLAGUE: Not malfunction. Overloaded nodes. 231 victims overclocked to death.</div>
+        <div class="log-line"><span class="timestamp">[13:10]</span> 23 relay nodes mapped (est. 60-80 total). Kill system on separate 915MHz hardware — possibly separate team.</div>
+        <div class="log-line magenta"><span class="timestamp">[13:30]</span> CONVERGENCE: Unknown milestone. 78% network utilization threshold. Currently 61%, +3.2%/week. ~5-6 weeks out.</div>
+        <div class="log-line system"><span class="timestamp">[13:42]</span> Convergence timeline file encrypted. Key unknown. May have died with Mei-Hua's neural damage.</div>
+        <div class="log-line"><span class="timestamp">[13:50]</span> Relay node RN-14 flagged — adjacent to Mei-Hua's hideout. Known layout. Possible approach target.</div>
+        <div class="log-line"><span class="timestamp">[14:00]</span> Intel package sent to Park via encrypted burner. Casualty correlation + relay map attached.</div>
+        <div class="log-line magenta"><span class="timestamp">[14:14]</span> Park reply: 19 early plague victims clustered near relay nodes. Network is OPTIMIZING its kill rate.</div>
+        <div class="log-line error"><span class="timestamp">[14:14]</span> CRITICAL: Huang Wei "Network Health Initiative" — free firmware updates Monday. Static key may be rotated. 48-HOUR WINDOW.</div>
+        <div class="log-line system"><span class="timestamp">[14:14]</span> Huang Wei contractors sweeping Jade Quarter. 4-6 hours from Vik's block.</div>
+        <div class="log-line"><span class="timestamp">[15:47]</span> UID scanner prototype built. Ferrite rod + ESP32 + OLED + vibe motor. Range ~3-5m. Rough but functional.</div>
+        <div class="log-line magenta"><span class="timestamp">[16:12]</span> ─── SESSION 2 COMPLETE ───</div>
+        <div class="log-line magenta"><span class="timestamp">[16:12]</span> 48 hours. The soldering iron is still warm.</div>
 
         <!-- /DM: END SCENE LOG -->
       </div>
@@ -371,15 +651,10 @@ body::after{
         <div class="collapsible-content">
           <div class="collapsible-inner">
             <!-- DM: UPDATE QUESTS HERE — Add/remove quest items. Use class q-active or q-pending for status badges -->
-            <div class="quest-item">
-              &#x25B8; The Kuroyama Extraction <span class="q-status q-active">ACTIVE</span>
-            </div>
-            <div class="quest-item">
-              &#x25B8; Ghost Signal — Dock 7 <span class="q-status q-pending">PENDING</span>
-            </div>
-            <div class="quest-item" style="opacity:0.4">
-              &#x25B8; [ENCRYPTED — CLEARANCE REQUIRED]
-            </div>
+            <div class="quest-item">&#x25B8; THE TERMINUS KILLSWITCH — Auth key cracked. Static key: D7A3:91F0:BC48:550E. Need to build blocker/jammer. <span class="q-status q-active">ACTIVE</span></div>
+            <div class="quest-item">&#x25B8; EXPOSE TERMINUS — Distributed brain computation. 231 dead from overload. Need to act before CONVERGENCE (~5-6 weeks). <span class="q-status q-active">ACTIVE</span></div>
+            <div class="quest-item">&#x25B8; CONVERGENCE — Unknown milestone at 78% utilization. Currently 61%. Timeline encrypted. <span class="q-status q-pending">PENDING</span></div>
+            <div class="quest-item">&#x25B8; LIN MEI-HUA — Critical condition at Vik's clinic. Recovery unknown. <span class="q-status q-pending">PENDING</span></div>
             <!-- /DM: END QUESTS -->
           </div>
         </div>
@@ -393,10 +668,10 @@ body::after{
         <div class="collapsible-content">
           <div class="collapsible-inner">
             <!-- DM: UPDATE NPCs HERE -->
-            <div class="npc-item"><span style="color:var(--cyan)">KIRA TANAKA</span> — Fixer, Neon Quarter. Reliable. Owes you one.</div>
-            <div class="npc-item"><span style="color:var(--amber)">BISHOP</span> — Info broker, location unknown. Handle with caution.</div>
-            <div class="npc-item"><span style="color:var(--magenta)">DR. VOSS</span> — Ripperdoc, sub-level 4. Premium chrome, premium prices.</div>
-            <div class="npc-item" style="opacity:0.35"><span style="color:var(--red)">[REDACTED]</span> — ██████████████</div>
+            <div class="npc-item">&#x25B8; <strong>LIN MEI-HUA</strong> — Huang Wei neural researcher. Critical condition. Vik's clinic. <span style="color:var(--red)">CRITICAL</span></div>
+            <div class="npc-item">&#x25B8; <strong>DET. PARK SOJIN</strong> — NSPD Cybercrime. Badge 4471. Unofficial ally. Analog radio ch.3. <span style="color:var(--green)">ALLIED</span></div>
+            <div class="npc-item">&#x25B8; <strong>VIKTOR "VIK" VOLKOV</strong> — Underground aug surgeon. Jade Quarter border. Owes: killswitch disarm. <span style="color:var(--amber)">PROFESSIONAL</span></div>
+            <div class="npc-item">&#x25B8; <strong>CHEN LIWEI "OLD WIRE"</strong> — Mentor. Aug mechanic. Rusted Flats. Dead-drop sent. <span style="color:var(--green)">TRUSTED</span></div>
             <!-- /DM: END NPCs -->
           </div>
         </div>
@@ -411,34 +686,34 @@ body::after{
           <div class="collapsible-inner">
             <!-- DM: UPDATE FACTIONS HERE — Adjust width% for faction-fill and color to reflect standing. Colors: var(--green) friendly, var(--amber) neutral, var(--red) hostile -->
             <div class="faction-row">
-              <span class="faction-name">Kuroyama Syndicate</span>
-              <div class="faction-bar"><div class="faction-fill" style="width:65%;background:var(--amber)"></div></div>
+              <span class="faction-name">Huang Wei Corp</span>
+              <div class="faction-bar"><div class="faction-fill" style="width:50%;background:var(--amber)"></div></div>
               <span class="faction-label" style="color:var(--amber)">NEUTRAL</span>
             </div>
             <div class="faction-row">
-              <span class="faction-name">NeoGov Authority</span>
-              <div class="faction-bar"><div class="faction-fill" style="width:30%;background:var(--red)"></div></div>
-              <span class="faction-label" style="color:var(--red)">HOSTILE</span>
+              <span class="faction-name">The Oxidizers</span>
+              <div class="faction-bar"><div class="faction-fill" style="width:50%;background:var(--amber)"></div></div>
+              <span class="faction-label" style="color:var(--amber)">NEUTRAL</span>
             </div>
             <div class="faction-row">
-              <span class="faction-name">The Collective</span>
-              <div class="faction-bar"><div class="faction-fill" style="width:80%;background:var(--green)"></div></div>
-              <span class="faction-label" style="color:var(--green)">ALLIED</span>
+              <span class="faction-name">Jade Circuit Triad</span>
+              <div class="faction-bar"><div class="faction-fill" style="width:50%;background:var(--amber)"></div></div>
+              <span class="faction-label" style="color:var(--amber)">NEUTRAL</span>
             </div>
             <div class="faction-row">
-              <span class="faction-name">Chrome Reapers</span>
-              <div class="faction-bar"><div class="faction-fill" style="width:20%;background:var(--red)"></div></div>
-              <span class="faction-label" style="color:var(--red)">HOSTILE</span>
+              <span class="faction-name">NSPD Cybercrime</span>
+              <div class="faction-bar"><div class="faction-fill" style="width:50%;background:var(--amber)"></div></div>
+              <span class="faction-label" style="color:var(--amber)">NEUTRAL</span>
             </div>
             <div class="faction-row">
-              <span class="faction-name">Silk Road Traders</span>
-              <div class="faction-bar"><div class="faction-fill" style="width:55%;background:var(--amber)"></div></div>
-              <span class="faction-label" style="color:var(--amber)">WARY</span>
+              <span class="faction-name">The Communion</span>
+              <div class="faction-bar"><div class="faction-fill" style="width:50%;background:var(--amber)"></div></div>
+              <span class="faction-label" style="color:var(--amber)">NEUTRAL</span>
             </div>
             <div class="faction-row">
-              <span class="faction-name">Ghost Circuit</span>
-              <div class="faction-bar"><div class="faction-fill" style="width:45%;background:var(--cyan)"></div></div>
-              <span class="faction-label" style="color:var(--cyan)">UNKNOWN</span>
+              <span class="faction-name">Black Lotus Society</span>
+              <div class="faction-bar"><div class="faction-fill" style="width:50%;background:var(--amber)"></div></div>
+              <span class="faction-label" style="color:var(--amber)">NEUTRAL</span>
             </div>
             <!-- /DM: END FACTIONS -->
           </div>
@@ -448,9 +723,88 @@ body::after{
     </div>
   </section>
 
+  <!-- ========== NPC COMM PANEL ========== -->
+  <section class="section" id="commPanel">
+    <div class="section-header">
+      <span class="dot" style="background:var(--green);box-shadow:0 0 8px #00ff8888"></span>
+      INCOMING COMMS
+      <!-- DM: The unread count auto-updates based on .unread messages below -->
+      <span class="comm-unread-count" id="commUnreadCount"></span>
+    </div>
+    <div class="section-body" style="padding:0;">
+      <!-- DM: UPDATE COMMS — Add new messages at the top. Add class "unread" for new messages the player hasn't seen.
+           Remove "unread" class after the player acknowledges in-game. Add comm-badge with class "urgent" or "new" as needed. -->
+
+      <div class="comm-message unread">
+        <div class="comm-sender">OLD WIRE <span class="comm-timestamp">[~11:00 — PAPER NOTE]</span> <span class="comm-badge new">NEW</span></div>
+        <div class="comm-body">"I know what this is. I know what it was before it was this. Don't look for me. 48 hours. Use the Keysight. Try 230400. Don't trust the clock line." — W</div>
+      </div>
+
+      <div class="comm-message">
+        <div class="comm-sender">OLD WIRE <span class="comm-timestamp">[05:47]</span></div>
+        <div class="comm-body">"Don't come to the shop. Stay where you are. I'm coming to you." — W [never arrived]</div>
+      </div>
+
+      <div class="comm-message">
+        <div class="comm-sender">DET. PARK SOJIN <span class="comm-timestamp">[04:55]</span></div>
+        <div class="comm-body">"Liyang corridor footage sealed under my case file. 72hr hold. It's not gone — it's locked. Burner for updates, ch.3 for emergencies. Cross-ref results in ~12hrs. Stay dark." — Park</div>
+      </div>
+
+      <div class="comm-message">
+        <div class="comm-sender">DET. PARK SOJIN <span class="comm-timestamp">[04:32]</span></div>
+        <div class="comm-body">"Running three tracks: sealed case file, victim cross-reference, counter-intel sweep. Radio silence until I have something. Ch.3 if urgent." — Park</div>
+      </div>
+
+      <div class="comm-message">
+        <div class="comm-sender">VIK <span class="comm-timestamp">[04:20]</span></div>
+        <div class="comm-body">"She's stable. For now. Don't need your credits — need that killswitch disarmed. You owe me that much." — V</div>
+      </div>
+
+      <!-- /DM: END COMMS -->
+    </div>
+  </section>
+
+  <!-- ========== NEWS TICKER ========== -->
+  <div class="ticker-wrap" id="newsTicker">
+    <div class="ticker-label">&#x26A0; LIVE</div>
+    <div class="ticker-track">
+      <!-- DM: UPDATE TICKER — Add/remove ticker-item spans. The track duplicates itself for seamless scroll. -->
+      <span class="ticker-item">HUANG WEI BIOMEDICAL Q4 EARNINGS EXCEED PROJECTIONS — STOCK UP 12%</span>
+      <span class="ticker-item"><span class="ticker-sep">///</span></span>
+      <span class="ticker-item">NSPD CYBERCRIME DIVISION ANNOUNCES EXPANDED GRID SECTOR SURVEILLANCE EFFECTIVE IMMEDIATELY</span>
+      <span class="ticker-item"><span class="ticker-sep">///</span></span>
+      <span class="ticker-item">DIGITAL PLAGUE UPDATE: 231 CONFIRMED CASES — ALL LINKED TO SERIES 9 IMPLANTS — HUANG WEI DENIES CONNECTION</span>
+      <span class="ticker-item"><span class="ticker-sep">///</span></span>
+      <span class="ticker-item">OXIDIZER CELL CLAIMS RESPONSIBILITY FOR NEON ROW POWER SUBSTATION ATTACK — NO CASUALTIES REPORTED</span>
+      <span class="ticker-item"><span class="ticker-sep">///</span></span>
+      <span class="ticker-item">JADE CIRCUIT TRIAD TERRITORY DISPUTE ESCALATES IN DOCKS DISTRICT — THREE DEAD</span>
+      <span class="ticker-item"><span class="ticker-sep">///</span></span>
+      <span class="ticker-item">COMMUNITY NOTICE: FATHER DOMINGUEZ FREE CLINIC HOURS EXTENDED — RUSTED MILE CHAPEL</span>
+      <span class="ticker-item"><span class="ticker-sep">///</span></span>
+      <span class="ticker-item">HUANG WEI ANNOUNCES "NETWORK HEALTH INITIATIVE" — FREE SERIES 9 FIRMWARE UPDATES AT LICENSED CLINICS</span>
+      <span class="ticker-item"><span class="ticker-sep">///</span></span>
+      <!-- Duplicate for seamless loop -->
+      <span class="ticker-item">HUANG WEI BIOMEDICAL Q4 EARNINGS EXCEED PROJECTIONS — STOCK UP 12%</span>
+      <span class="ticker-item"><span class="ticker-sep">///</span></span>
+      <span class="ticker-item">NSPD CYBERCRIME DIVISION ANNOUNCES EXPANDED GRID SECTOR SURVEILLANCE EFFECTIVE IMMEDIATELY</span>
+      <span class="ticker-item"><span class="ticker-sep">///</span></span>
+      <span class="ticker-item">DIGITAL PLAGUE UPDATE: 231 CONFIRMED CASES — ALL LINKED TO SERIES 9 IMPLANTS — HUANG WEI DENIES CONNECTION</span>
+      <span class="ticker-item"><span class="ticker-sep">///</span></span>
+      <span class="ticker-item">OXIDIZER CELL CLAIMS RESPONSIBILITY FOR NEON ROW POWER SUBSTATION ATTACK — NO CASUALTIES REPORTED</span>
+      <span class="ticker-item"><span class="ticker-sep">///</span></span>
+      <span class="ticker-item">JADE CIRCUIT TRIAD TERRITORY DISPUTE ESCALATES IN DOCKS DISTRICT — THREE DEAD</span>
+      <span class="ticker-item"><span class="ticker-sep">///</span></span>
+      <span class="ticker-item">COMMUNITY NOTICE: FATHER DOMINGUEZ FREE CLINIC HOURS EXTENDED — RUSTED MILE CHAPEL</span>
+      <span class="ticker-item"><span class="ticker-sep">///</span></span>
+      <span class="ticker-item">HUANG WEI ANNOUNCES "NETWORK HEALTH INITIATIVE" — FREE SERIES 9 FIRMWARE UPDATES AT LICENSED CLINICS</span>
+      <span class="ticker-item"><span class="ticker-sep">///</span></span>
+      <!-- /DM: END TICKER -->
+    </div>
+  </div>
+
   <!-- ========== FOOTER ========== -->
   <footer class="footer">
-    // SIGNAL STRENGTH: NOMINAL &nbsp;&bull;&nbsp; ENCRYPTION: AES-256 &nbsp;&bull;&nbsp; SESSION: ACTIVE
+    // SIGNAL STRENGTH: NOMINAL &nbsp;&bull;&nbsp; ENCRYPTION: AES-256 &nbsp;&bull;&nbsp; LIVE SYNC: ACTIVE &nbsp;&bull;&nbsp; SESSION: ACTIVE
   </footer>
 
 </div><!-- /hub-wrapper -->
@@ -531,8 +885,149 @@ body::after{
       log.scrollTop = log.scrollHeight;
     }
   }
-  // Kick off boot sequence after a brief pause
-  setTimeout(addBootLine, 400);
+  // Kick off boot sequence — skip animation on auto-refresh
+  if (sessionStorage.getItem('nt-booted')) {
+    bootLines.forEach(function(b) {
+      var div = document.createElement('div');
+      div.className = 'log-line boot-line' + (b.cls ? ' ' + b.cls : '');
+      div.style.animationDelay = '0s';
+      div.textContent = b.text;
+      log.appendChild(div);
+    });
+    var cur = document.createElement('span');
+    cur.className = 'cursor';
+    cur.textContent = '\u2588';
+    var lastLine = document.createElement('div');
+    lastLine.className = 'log-line boot-line';
+    lastLine.style.animationDelay = '0s';
+    lastLine.textContent = '> ';
+    lastLine.appendChild(cur);
+    log.appendChild(lastLine);
+    log.scrollTop = log.scrollHeight;
+  } else {
+    sessionStorage.setItem('nt-booted', '1');
+    setTimeout(addBootLine, 400);
+  }
+
+  /* ---- Auto-sync: refresh content panels every 30s without reloading page ---- */
+  /* This preserves audio playback and boot animation state */
+  setInterval(function() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', window.location.href + '?t=' + Date.now(), true);
+    xhr.onload = function() {
+      if (xhr.status !== 200) return;
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(xhr.responseText, 'text/html');
+
+      /* Refresh transmission log */
+      var newLog = doc.getElementById('logArea');
+      var oldLog = document.getElementById('logArea');
+      if (newLog && oldLog) {
+        /* Only update static (non-boot) log lines */
+        var newStatic = newLog.querySelectorAll('.log-line:not(.boot-line)');
+        var oldStatic = oldLog.querySelectorAll('.log-line:not(.boot-line)');
+        if (newStatic.length !== oldStatic.length) {
+          /* Remove old non-boot lines */
+          oldStatic.forEach(function(el) { el.remove(); });
+          /* Append new ones before the cursor line */
+          var cursor = oldLog.querySelector('.cursor');
+          var cursorLine = cursor ? cursor.parentElement : null;
+          newStatic.forEach(function(el) {
+            if (cursorLine) oldLog.insertBefore(el.cloneNode(true), cursorLine);
+            else oldLog.appendChild(el.cloneNode(true));
+          });
+          oldLog.scrollTop = oldLog.scrollHeight;
+        }
+      }
+
+      /* Refresh intel panel sections (quests, NPCs, factions) */
+      var newInner = doc.querySelectorAll('.collapsible .collapsible-inner');
+      var oldInner = document.querySelectorAll('.collapsible .collapsible-inner');
+      newInner.forEach(function(ni, i) {
+        if (oldInner[i] && ni.innerHTML !== oldInner[i].innerHTML) {
+          oldInner[i].innerHTML = ni.innerHTML;
+        }
+      });
+
+      /* Refresh nav card statuses (but not audio) */
+      var newCards = doc.querySelectorAll('.nav-card');
+      var oldCards = document.querySelectorAll('.nav-card');
+      newCards.forEach(function(nc, i) {
+        if (oldCards[i]) {
+          oldCards[i].className = nc.className;
+          var onc = nc.getAttribute('onclick');
+          if (onc) oldCards[i].setAttribute('onclick', onc);
+          else oldCards[i].removeAttribute('onclick');
+          oldCards[i].href = nc.href;
+          var ns = nc.querySelector('.status');
+          var os = oldCards[i].querySelector('.status');
+          if (ns && os) { os.className = ns.className; os.textContent = ns.textContent; }
+        }
+      });
+
+      /* Refresh mood text (but NOT audio iframe — preserves playback) */
+      var newMood = doc.querySelector('.audio-mood');
+      var oldMood = document.querySelector('.audio-mood');
+      if (newMood && oldMood && newMood.textContent !== oldMood.textContent) {
+        oldMood.textContent = newMood.textContent;
+      }
+
+      /* Check if audio URL changed — only swap if DM updated it */
+      var newIframe = doc.querySelector('.audio-frame-wrap iframe');
+      var oldIframe = document.querySelector('.audio-frame-wrap iframe');
+      if (newIframe && oldIframe && newIframe.getAttribute('src') !== oldIframe.getAttribute('src')) {
+        oldIframe.src = newIframe.getAttribute('src');
+      }
+    };
+      /* Refresh threat monitor */
+      var newThreats = doc.getElementById('threatMonitor');
+      var oldThreats = document.getElementById('threatMonitor');
+      if (newThreats && oldThreats) {
+        var newBody = newThreats.querySelector('.section-body');
+        var oldBody = oldThreats.querySelector('.section-body');
+        if (newBody && oldBody && newBody.innerHTML !== oldBody.innerHTML) {
+          oldBody.innerHTML = newBody.innerHTML;
+        }
+      }
+
+      /* Refresh comm panel */
+      var newComm = doc.getElementById('commPanel');
+      var oldComm = document.getElementById('commPanel');
+      if (newComm && oldComm) {
+        var newCBody = newComm.querySelector('.section-body');
+        var oldCBody = oldComm.querySelector('.section-body');
+        if (newCBody && oldCBody && newCBody.innerHTML !== oldCBody.innerHTML) {
+          oldCBody.innerHTML = newCBody.innerHTML;
+        }
+      }
+      updateUnreadCount();
+
+      /* Refresh news ticker */
+      var newTicker = doc.getElementById('newsTicker');
+      var oldTicker = document.getElementById('newsTicker');
+      if (newTicker && oldTicker) {
+        var newTrack = newTicker.querySelector('.ticker-track');
+        var oldTrack = oldTicker.querySelector('.ticker-track');
+        if (newTrack && oldTrack && newTrack.innerHTML !== oldTrack.innerHTML) {
+          oldTrack.innerHTML = newTrack.innerHTML;
+        }
+      }
+    };
+    xhr.onerror = function() {
+      console.warn('NEON TERMINUS: Live sync failed — ensure HTTP server is running');
+    };
+    xhr.send();
+  }, 30000);
+
+  /* ---- Unread comm count ---- */
+  function updateUnreadCount() {
+    var unread = document.querySelectorAll('.comm-message.unread').length;
+    var badge = document.getElementById('commUnreadCount');
+    if (badge) {
+      badge.textContent = unread > 0 ? unread + ' UNREAD' : '';
+    }
+  }
+  updateUnreadCount();
 
 })();
 </script>

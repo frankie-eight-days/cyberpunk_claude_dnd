@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEURAL DIVE INTERFACE // NEON TERMINUS</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════
+   NEON TERMINUS — NEURAL DIVE INTERFACE
+   ══════════════════════════════════════════ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --cyan: #00ffcc;
+  --pink: #ff3366;
+  --amber: #ffaa00;
+  --green: #33dd66;
+  --purple: #aa55ff;
+  --white: #e0e0e0;
+  --bg: #0a0a0f;
+  --panel: #0d0d18;
+  --panel-border: #1a1a2e;
+  --text: #b0b0c0;
+  --text-bright: #e0e0f0;
+  --glow-cyan: 0 0 8px #00ffcc66, 0 0 20px #00ffcc33;
+  --glow-pink: 0 0 8px #ff336688, 0 0 20px #ff336644;
+  --glow-amber: 0 0 8px #ffaa0066, 0 0 20px #ffaa0033;
+  --glow-green: 0 0 8px #33dd6666, 0 0 20px #33dd6633;
+  --glow-purple: 0 0 8px #aa55ff66, 0 0 20px #aa55ff33;
+}
+
+html { font-size: 16px; }
+
+body {
+  font-family: 'Share Tech Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+
+/* ── SCANLINE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.06) 2px,
+    rgba(0, 0, 0, 0.06) 4px
+  );
+}
+
+/* ── CRT VIGNETTE ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.6) 100%);
+}
+
+/* ══════════════════════════════════════════
+   HEADER
+   ══════════════════════════════════════════ */
+.dive-header {
+  text-align: center;
+  padding: 1.5rem 1rem 0.5rem;
+  position: relative;
+  z-index: 10;
+}
+
+.dive-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.4rem, 4vw, 2.4rem);
+  letter-spacing: 0.15em;
+  color: #fff;
+  position: relative;
+  display: inline-block;
+  text-shadow: var(--glow-cyan), 0 0 40px #00ffcc22;
+}
+
+.dive-title::before,
+.dive-title::after {
+  content: 'NEURAL DIVE INTERFACE';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.dive-title::before {
+  color: var(--cyan);
+  z-index: -1;
+  animation: glitch-1 4s infinite linear alternate-reverse;
+}
+
+.dive-title::after {
+  color: var(--pink);
+  z-index: -2;
+  animation: glitch-2 3s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-1 {
+  0%, 92%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+  93% { clip-path: inset(20% 0 40% 0); transform: translate(-3px, 1px); }
+  96% { clip-path: inset(60% 0 10% 0); transform: translate(3px, -1px); }
+}
+
+@keyframes glitch-2 {
+  0%, 88%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+  89% { clip-path: inset(40% 0 20% 0); transform: translate(2px, -2px); }
+  94% { clip-path: inset(10% 0 60% 0); transform: translate(-2px, 1px); }
+}
+
+.dive-subtitle {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--cyan);
+  letter-spacing: 0.3em;
+  opacity: 0.6;
+  margin-top: 0.25rem;
+}
+
+/* ══════════════════════════════════════════
+   TRACE TIMER BAR
+   ══════════════════════════════════════════ */
+.trace-container {
+  padding: 0.75rem 1.5rem;
+  position: relative;
+  z-index: 10;
+}
+
+.trace-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+}
+
+.trace-label-left {
+  color: var(--cyan);
+}
+
+.trace-label-right {
+  color: var(--text);
+}
+
+.trace-bar-outer {
+  width: 100%;
+  height: 12px;
+  background: #111122;
+  border: 1px solid var(--panel-border);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.trace-bar-inner {
+  height: 100%;
+  transition: width 0.8s ease, background-color 0.5s ease, box-shadow 0.5s ease;
+  border-radius: 1px;
+  position: relative;
+}
+
+.trace-bar-inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+  animation: trace-shimmer 2s infinite;
+}
+
+@keyframes trace-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.trace-safe .trace-bar-inner { background: var(--cyan); box-shadow: var(--glow-cyan); }
+.trace-warning .trace-bar-inner { background: var(--amber); box-shadow: var(--glow-amber); }
+.trace-critical .trace-bar-inner { background: var(--pink); box-shadow: var(--glow-pink); }
+.trace-flatline .trace-bar-inner {
+  background: var(--pink);
+  box-shadow: var(--glow-pink);
+  animation: flatline-pulse 0.5s infinite;
+}
+
+.trace-warning .trace-label-left { color: var(--amber); }
+.trace-critical .trace-label-left { color: var(--pink); }
+.trace-flatline .trace-label-left { color: var(--pink); animation: flatline-pulse 0.5s infinite; }
+
+@keyframes flatline-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ══════════════════════════════════════════
+   MAIN LAYOUT
+   ══════════════════════════════════════════ */
+.dive-main {
+  display: flex;
+  gap: 1rem;
+  padding: 0.5rem 1.5rem 1.5rem;
+  position: relative;
+  z-index: 10;
+  min-height: calc(100vh - 180px);
+}
+
+/* ══════════════════════════════════════════
+   NODE GRAPH PANEL
+   ══════════════════════════════════════════ */
+.graph-panel {
+  flex: 1;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  min-height: 500px;
+}
+
+.graph-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(0, 255, 204, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(170, 85, 255, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Grid pattern background */
+.graph-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 255, 204, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 204, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+.graph-svg {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+}
+
+/* ══════════════════════════════════════════
+   SVG NODE STYLES
+   ══════════════════════════════════════════ */
+
+/* Connection lines */
+.node-connection {
+  stroke: #1a3a3a;
+  stroke-width: 2;
+  stroke-dasharray: 8 4;
+  fill: none;
+  transition: stroke 0.4s ease, stroke-width 0.3s ease;
+}
+
+.node-connection.active-path {
+  stroke: var(--cyan);
+  stroke-width: 2.5;
+  stroke-dasharray: none;
+  filter: drop-shadow(0 0 4px rgba(0, 255, 204, 0.4));
+  animation: path-pulse 2s infinite;
+}
+
+.node-connection.locked-path {
+  stroke: #151525;
+  stroke-dasharray: 4 8;
+  stroke-width: 1.5;
+}
+
+@keyframes path-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Node groups */
+.node-group { cursor: pointer; }
+.node-group:hover .node-hex { filter: brightness(1.3); }
+.node-group:hover .node-label { opacity: 1; }
+
+/* Node hexagons */
+.node-hex {
+  transition: all 0.3s ease;
+  stroke-width: 2;
+}
+
+.node-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  fill: var(--text);
+  text-anchor: middle;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.node-icon {
+  font-size: 14px;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+/* Node type colors */
+.node-entry .node-hex { fill: #0a1a10; stroke: var(--green); }
+.node-entry .node-icon { fill: var(--green); }
+
+.node-data .node-hex { fill: #0a1a1a; stroke: var(--cyan); }
+.node-data .node-icon { fill: var(--cyan); }
+
+.node-security .node-hex { fill: #1a0a10; stroke: var(--pink); }
+.node-security .node-icon { fill: var(--pink); }
+
+.node-control .node-hex { fill: #1a1508; stroke: var(--amber); }
+.node-control .node-icon { fill: var(--amber); }
+
+.node-core .node-hex { fill: #120a1a; stroke: var(--purple); }
+.node-core .node-icon { fill: var(--purple); }
+
+.node-exit .node-hex { fill: #121218; stroke: var(--white); }
+.node-exit .node-icon { fill: var(--white); }
+
+/* Node states */
+.node-group[data-state="locked"] .node-hex {
+  opacity: 0.35;
+  filter: saturate(0.3);
+}
+.node-group[data-state="locked"] .node-label { opacity: 0.3; }
+
+.node-group[data-state="accessible"] .node-hex {
+  opacity: 0.8;
+  animation: node-accessible-pulse 3s infinite ease-in-out;
+}
+
+@keyframes node-accessible-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.node-group[data-state="accessed"] .node-hex {
+  opacity: 1;
+  filter: brightness(1.1);
+}
+
+.node-group[data-state="compromised"] .node-hex {
+  animation: node-glitch 0.3s infinite;
+}
+
+@keyframes node-glitch {
+  0% { transform: translate(0, 0); opacity: 1; }
+  25% { transform: translate(-2px, 1px); opacity: 0.8; }
+  50% { transform: translate(1px, -1px); opacity: 0.9; }
+  75% { transform: translate(2px, 1px); opacity: 0.7; }
+  100% { transform: translate(0, 0); opacity: 1; }
+}
+
+.node-group[data-state="player"] .node-hex {
+  opacity: 1;
+  filter: brightness(1.3);
+}
+
+.node-group[data-state="ice-active"] .node-hex {
+  animation: ice-alert-node 0.8s infinite;
+}
+
+@keyframes ice-alert-node {
+  0%, 100% { stroke: var(--pink); filter: brightness(1); }
+  50% { stroke: #ff0033; filter: brightness(1.5) drop-shadow(0 0 10px rgba(255, 51, 102, 0.6)); }
+}
+
+/* Player ring indicator */
+.player-ring {
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 2;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.node-group[data-state="player"] .player-ring {
+  opacity: 1;
+  animation: player-ring-pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes player-ring-pulse {
+  0%, 100% { stroke-width: 2; opacity: 0.5; r: 32; }
+  50% { stroke-width: 3; opacity: 1; r: 36; }
+}
+
+/* Accessed checkmark */
+.accessed-check {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.node-group[data-state="accessed"] .accessed-check {
+  opacity: 1;
+}
+
+/* ══════════════════════════════════════════
+   STATUS PANEL (RIGHT SIDEBAR)
+   ══════════════════════════════════════════ */
+.status-panel {
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.panel-section {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 0.75rem;
+}
+
+.panel-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--cyan);
+  border-bottom: 1px solid var(--panel-border);
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+/* ── Node Info ── */
+.node-info-name {
+  font-size: 1rem;
+  color: var(--text-bright);
+  margin-bottom: 0.25rem;
+}
+
+.node-info-type {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.4rem;
+}
+
+.node-info-type.type-entry { color: var(--green); }
+.node-info-type.type-data { color: var(--cyan); }
+.node-info-type.type-security { color: var(--pink); }
+.node-info-type.type-control { color: var(--amber); }
+.node-info-type.type-core { color: var(--purple); }
+.node-info-type.type-exit { color: var(--white); }
+
+.node-info-state {
+  font-size: 0.7rem;
+  color: var(--text);
+  opacity: 0.7;
+}
+
+.node-info-contents {
+  font-size: 0.75rem;
+  color: var(--text);
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--panel-border);
+  line-height: 1.4;
+}
+
+.node-info-empty {
+  font-size: 0.75rem;
+  color: var(--text);
+  opacity: 0.4;
+  font-style: italic;
+}
+
+/* ── ICE Alert ── */
+.ice-panel {
+  display: none;
+  border-color: var(--pink);
+  box-shadow: inset 0 0 15px rgba(255, 51, 102, 0.1), var(--glow-pink);
+  animation: ice-panel-flash 1s ease-out;
+}
+
+.ice-panel.active {
+  display: block;
+}
+
+@keyframes ice-panel-flash {
+  0% { border-color: #ff0033; box-shadow: inset 0 0 30px rgba(255, 0, 51, 0.3), 0 0 20px rgba(255, 51, 102, 0.5); }
+  100% { border-color: var(--pink); box-shadow: inset 0 0 15px rgba(255, 51, 102, 0.1), var(--glow-pink); }
+}
+
+.ice-panel .panel-title {
+  color: var(--pink);
+  border-bottom-color: rgba(255, 51, 102, 0.3);
+}
+
+.ice-type-name {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--pink);
+  text-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+  margin-bottom: 0.15rem;
+  letter-spacing: 0.05em;
+}
+
+.ice-tier {
+  font-size: 0.75rem;
+  color: var(--amber);
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.ice-description {
+  font-size: 0.72rem;
+  color: var(--text);
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
+/* ── Player Stats ── */
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.2rem 0;
+  font-size: 0.75rem;
+}
+
+.stat-label { color: var(--text); opacity: 0.7; }
+.stat-value { color: var(--text-bright); }
+
+.stat-bar-outer {
+  width: 60%;
+  height: 6px;
+  background: #111122;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.stat-bar-inner {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.stat-bar-deck .stat-bar-inner { background: var(--cyan); }
+.stat-bar-stealth .stat-bar-inner { background: var(--green); }
+
+/* ── Action Log ── */
+.action-log {
+  max-height: 140px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--panel-border) transparent;
+}
+
+.action-log::-webkit-scrollbar { width: 4px; }
+.action-log::-webkit-scrollbar-track { background: transparent; }
+.action-log::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 2px; }
+
+.log-entry {
+  font-size: 0.7rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid rgba(26, 26, 46, 0.5);
+  color: var(--text);
+  opacity: 0.8;
+}
+
+.log-entry .log-time {
+  color: var(--cyan);
+  opacity: 0.5;
+  margin-right: 0.3rem;
+}
+
+.log-entry:last-child { border-bottom: none; }
+
+/* ══════════════════════════════════════════
+   ACCESS DENIED POPUP
+   ══════════════════════════════════════════ */
+.access-denied {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  background: rgba(13, 13, 24, 0.95);
+  border: 2px solid var(--pink);
+  box-shadow: 0 0 30px rgba(255, 51, 102, 0.3), inset 0 0 20px rgba(255, 51, 102, 0.1);
+  padding: 2rem 3rem;
+  text-align: center;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  border-radius: 4px;
+}
+
+.access-denied.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
+}
+
+.access-denied-text {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--pink);
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 15px rgba(255, 51, 102, 0.5);
+}
+
+.access-denied-sub {
+  font-size: 0.7rem;
+  color: var(--text);
+  opacity: 0.5;
+  margin-top: 0.5rem;
+  letter-spacing: 0.1em;
+}
+
+/* ══════════════════════════════════════════
+   FOOTER / JACK OUT LINK
+   ══════════════════════════════════════════ */
+.dive-footer {
+  padding: 1rem 1.5rem 1.5rem;
+  position: relative;
+  z-index: 10;
+}
+
+.jack-out-link {
+  display: inline-block;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--pink);
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+  transition: opacity 0.3s ease, text-shadow 0.3s ease;
+}
+
+.jack-out-link:hover {
+  opacity: 1;
+  text-shadow: 0 0 8px rgba(255, 51, 102, 0.5);
+}
+
+/* ══════════════════════════════════════════
+   DATA STREAM PARTICLES (background deco)
+   ══════════════════════════════════════════ */
+.data-particles {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.data-particle {
+  position: absolute;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--cyan);
+  opacity: 0;
+  animation: particle-fall linear infinite;
+}
+
+@keyframes particle-fall {
+  0% { transform: translateY(-20px); opacity: 0; }
+  10% { opacity: 0.15; }
+  90% { opacity: 0.15; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* ══════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .dive-main {
+    flex-direction: column;
+    padding: 0.5rem 0.75rem 1rem;
+  }
+
+  .status-panel {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .status-panel .panel-section {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 200px;
+  }
+
+  .graph-panel {
+    min-height: 350px;
+  }
+
+  .graph-svg {
+    min-height: 350px;
+  }
+
+  .trace-container {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .dive-header {
+    padding: 1rem 0.75rem 0.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .status-panel .panel-section {
+    flex: 1 1 100%;
+  }
+
+  .dive-title {
+    font-size: 1.1rem;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ DATA STREAM PARTICLES ═══ -->
+<div class="data-particles" id="dataParticles"></div>
+
+<!-- ═══ ACCESS DENIED POPUP ═══ -->
+<div class="access-denied" id="accessDenied">
+  <div class="access-denied-text">ACCESS DENIED</div>
+  <div class="access-denied-sub">INSUFFICIENT PRIVILEGES // NODE LOCKED</div>
+</div>
+
+<!-- ═══ HEADER ═══ -->
+<header class="dive-header">
+  <h1 class="dive-title">NEURAL DIVE INTERFACE</h1>
+  <div class="dive-subtitle">DECK PROTOCOL v3.7 // ENCRYPTED CHANNEL</div>
+</header>
+
+<!-- ═══ TRACE TIMER ═══ -->
+<!-- DM: Edit data-rounds-remaining and data-rounds-total to control the trace timer -->
+<div class="trace-container" id="traceContainer" data-rounds-remaining="8" data-rounds-total="8">
+  <div class="trace-label">
+    <span class="trace-label-left" id="traceText">TRACE: 8 ROUNDS</span>
+    <span class="trace-label-right" id="traceStatus">STATUS: UNDETECTED</span>
+  </div>
+  <div class="trace-bar-outer">
+    <div class="trace-bar-inner" id="traceBar" style="width: 100%;"></div>
+  </div>
+</div>
+
+<!-- ═══ MAIN LAYOUT ═══ -->
+<div class="dive-main">
+
+  <!-- ── NODE GRAPH ── -->
+  <div class="graph-panel">
+    <svg class="graph-svg" id="graphSvg" viewBox="0 0 700 500" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <!-- Glow filters -->
+        <filter id="glow-cyan" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feFlood flood-color="#00ffcc" flood-opacity="0.4" result="color"/>
+          <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+          <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-pink" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feFlood flood-color="#ff3366" flood-opacity="0.4" result="color"/>
+          <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+          <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-green" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feFlood flood-color="#33dd66" flood-opacity="0.4" result="color"/>
+          <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+          <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-amber" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feFlood flood-color="#ffaa00" flood-opacity="0.4" result="color"/>
+          <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+          <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-purple" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feFlood flood-color="#aa55ff" flood-opacity="0.4" result="color"/>
+          <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+          <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-white" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feFlood flood-color="#e0e0e0" flood-opacity="0.3" result="color"/>
+          <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+          <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- ── CONNECTION LINES ── -->
+      <!-- DM: Lines connect nodes. Class "active-path" for player-adjacent, "locked-path" for locked -->
+      <g id="connections">
+        <!-- Entry → Firewall -->
+        <line class="node-connection active-path" data-from="ENTRY_NODE" data-to="FIREWALL_01" x1="120" y1="250" x2="280" y2="170"/>
+        <!-- Entry → Exit -->
+        <line class="node-connection active-path" data-from="ENTRY_NODE" data-to="EXIT_PORT" x1="120" y1="250" x2="120" y2="430"/>
+        <!-- Firewall → Data Cache -->
+        <line class="node-connection locked-path" data-from="FIREWALL_01" data-to="DATA_CACHE" x1="280" y1="170" x2="420" y2="90"/>
+        <!-- Firewall → Admin Log -->
+        <line class="node-connection locked-path" data-from="FIREWALL_01" data-to="ADMIN_LOG" x1="280" y1="170" x2="420" y2="250"/>
+        <!-- Firewall → Sec Monitor -->
+        <line class="node-connection locked-path" data-from="FIREWALL_01" data-to="SEC_MONITOR" x1="280" y1="170" x2="420" y2="380"/>
+        <!-- Sec Monitor → Sys Control -->
+        <line class="node-connection locked-path" data-from="SEC_MONITOR" data-to="SYS_CONTROL" x1="420" y1="380" x2="560" y2="300"/>
+        <!-- Sys Control → Core DB -->
+        <line class="node-connection locked-path" data-from="SYS_CONTROL" data-to="CORE_DB" x1="560" y1="300" x2="620" y2="160"/>
+      </g>
+
+      <!-- ── NODES ── -->
+      <g id="nodes">
+
+        <!-- NODE: ENTRY_NODE — External Port -->
+        <!-- DM: Change data-state to update node. Options: locked, accessible, accessed, compromised, player, ice-active -->
+        <g class="node-group node-entry" id="ENTRY_NODE"
+           data-state="player"
+           data-name="External Port"
+           data-type="entry"
+           data-ice-type=""
+           data-ice-tier=""
+           data-contents="Entry point. Standard access port — low security. Signal origin traces to a public terminal in the Jade Quarter."
+           transform="translate(120, 250)">
+          <circle class="player-ring" r="32" cx="0" cy="0"/>
+          <polygon class="node-hex" points="0,-24 21,-12 21,12 0,24 -21,12 -21,-12" filter="url(#glow-green)"/>
+          <text class="node-icon" y="1">▶</text>
+          <text class="node-label" y="38">EXTERNAL PORT</text>
+          <text class="accessed-check" x="14" y="-16" font-size="12" fill="#33dd66">✓</text>
+        </g>
+
+        <!-- NODE: FIREWALL_01 — Perimeter Firewall -->
+        <g class="node-group node-security" id="FIREWALL_01"
+           data-state="accessible"
+           data-name="Perimeter Firewall"
+           data-type="security"
+           data-ice-type="Barrier"
+           data-ice-tier="1"
+           data-contents="Huang Wei standard perimeter ICE. Pattern-matching firewall — looks for unauthorized packet signatures. Barrier ICE will block further access until neutralized."
+           transform="translate(280, 170)">
+          <circle class="player-ring" r="32" cx="0" cy="0"/>
+          <polygon class="node-hex" points="0,-24 21,-12 21,12 0,24 -21,12 -21,-12" filter="url(#glow-pink)"/>
+          <text class="node-icon" y="1">🛡</text>
+          <text class="node-label" y="38">PERIMETER FIREWALL</text>
+          <text class="accessed-check" x="14" y="-16" font-size="12" fill="#33dd66">✓</text>
+        </g>
+
+        <!-- NODE: DATA_CACHE — User Data Cache -->
+        <g class="node-group node-data" id="DATA_CACHE"
+           data-state="locked"
+           data-name="User Data Cache"
+           data-type="data"
+           data-ice-type=""
+           data-ice-tier=""
+           data-contents="Cached user records. May contain employee credentials, personal comms, and transaction logs. Standard corporate data retention — 90-day rolling window."
+           transform="translate(420, 90)">
+          <circle class="player-ring" r="32" cx="0" cy="0"/>
+          <polygon class="node-hex" points="0,-24 21,-12 21,12 0,24 -21,12 -21,-12" filter="url(#glow-cyan)"/>
+          <text class="node-icon" y="1">◆</text>
+          <text class="node-label" y="38">USER DATA CACHE</text>
+          <text class="accessed-check" x="14" y="-16" font-size="12" fill="#33dd66">✓</text>
+        </g>
+
+        <!-- NODE: ADMIN_LOG — Admin Logs -->
+        <g class="node-group node-data" id="ADMIN_LOG"
+           data-state="locked"
+           data-name="Admin Logs"
+           data-type="data"
+           data-ice-type=""
+           data-ice-tier=""
+           data-contents="System administrator activity logs. High-value intelligence — tracks who accessed what and when. May contain references to classified projects."
+           transform="translate(420, 250)">
+          <circle class="player-ring" r="32" cx="0" cy="0"/>
+          <polygon class="node-hex" points="0,-24 21,-12 21,12 0,24 -21,12 -21,-12" filter="url(#glow-cyan)"/>
+          <text class="node-icon" y="1">◆</text>
+          <text class="node-label" y="38">ADMIN LOGS</text>
+          <text class="accessed-check" x="14" y="-16" font-size="12" fill="#33dd66">✓</text>
+        </g>
+
+        <!-- NODE: SEC_MONITOR — Security Monitor -->
+        <g class="node-group node-security" id="SEC_MONITOR"
+           data-state="locked"
+           data-name="Security Monitor"
+           data-type="security"
+           data-ice-type="Watchdog"
+           data-ice-tier="2"
+           data-contents="Active monitoring subsystem. Watchdog ICE patrols this node — it will flag intrusion attempts and accelerate the trace timer if not handled quietly."
+           transform="translate(420, 380)">
+          <circle class="player-ring" r="32" cx="0" cy="0"/>
+          <polygon class="node-hex" points="0,-24 21,-12 21,12 0,24 -21,12 -21,-12" filter="url(#glow-pink)"/>
+          <text class="node-icon" y="1">🛡</text>
+          <text class="node-label" y="38">SECURITY MONITOR</text>
+          <text class="accessed-check" x="14" y="-16" font-size="12" fill="#33dd66">✓</text>
+        </g>
+
+        <!-- NODE: SYS_CONTROL — System Control -->
+        <g class="node-group node-control" id="SYS_CONTROL"
+           data-state="locked"
+           data-name="System Control"
+           data-type="control"
+           data-ice-type=""
+           data-ice-tier=""
+           data-contents="Root-level system controls. Access here grants ability to disable security protocols, open locked partitions, or plant persistent backdoors."
+           transform="translate(560, 300)">
+          <circle class="player-ring" r="32" cx="0" cy="0"/>
+          <polygon class="node-hex" points="0,-24 21,-12 21,12 0,24 -21,12 -21,-12" filter="url(#glow-amber)"/>
+          <text class="node-icon" y="1">⚙</text>
+          <text class="node-label" y="38">SYSTEM CONTROL</text>
+          <text class="accessed-check" x="14" y="-16" font-size="12" fill="#33dd66">✓</text>
+        </g>
+
+        <!-- NODE: CORE_DB — Core Database -->
+        <g class="node-group node-core" id="CORE_DB"
+           data-state="locked"
+           data-name="Core Database"
+           data-type="core"
+           data-ice-type="Black ICE"
+           data-ice-tier="3"
+           data-contents="Primary objective. The core database contains classified project files, prototype schematics, and communications flagged TOP SECRET. Black ICE protects this node — lethal countermeasures."
+           transform="translate(620, 160)">
+          <circle class="player-ring" r="32" cx="0" cy="0"/>
+          <polygon class="node-hex" points="0,-24 21,-12 21,12 0,24 -21,12 -21,-12" filter="url(#glow-purple)"/>
+          <text class="node-icon" y="1">★</text>
+          <text class="node-label" y="38">CORE DATABASE</text>
+          <text class="accessed-check" x="14" y="-16" font-size="12" fill="#33dd66">✓</text>
+        </g>
+
+        <!-- NODE: EXIT_PORT — Emergency Disconnect -->
+        <g class="node-group node-exit" id="EXIT_PORT"
+           data-state="accessible"
+           data-name="Emergency Disconnect"
+           data-type="exit"
+           data-ice-type=""
+           data-ice-tier=""
+           data-contents="Emergency jack-out point. Clean disconnect — no trace residue. Use this if the dive goes sideways. You can always come back."
+           transform="translate(120, 430)">
+          <circle class="player-ring" r="32" cx="0" cy="0"/>
+          <polygon class="node-hex" points="0,-24 21,-12 21,12 0,24 -21,12 -21,-12" filter="url(#glow-white)"/>
+          <text class="node-icon" y="1">⏏</text>
+          <text class="node-label" y="38">EMERGENCY DISCONNECT</text>
+          <text class="accessed-check" x="14" y="-16" font-size="12" fill="#33dd66">✓</text>
+        </g>
+
+      </g>
+    </svg>
+  </div>
+
+  <!-- ── STATUS PANEL ── -->
+  <div class="status-panel">
+
+    <!-- Node Info -->
+    <div class="panel-section" id="nodeInfoPanel">
+      <div class="panel-title">NODE INTEL</div>
+      <div id="nodeInfoContent">
+        <div class="node-info-empty">Select a node to inspect...</div>
+      </div>
+    </div>
+
+    <!-- ICE Alert -->
+    <div class="panel-section ice-panel" id="icePanel">
+      <div class="panel-title">⚠ ICE DETECTED</div>
+      <div class="ice-type-name" id="iceTypeName">—</div>
+      <div class="ice-tier" id="iceTier">—</div>
+      <div class="ice-description" id="iceDescription">—</div>
+    </div>
+
+    <!-- Player Stats -->
+    <div class="panel-section">
+      <div class="panel-title">DECK STATUS</div>
+      <div class="stat-row">
+        <span class="stat-label">INTEGRITY</span>
+        <div class="stat-bar-outer stat-bar-deck">
+          <div class="stat-bar-inner" id="deckIntegrity" style="width: 100%;"></div>
+        </div>
+        <span class="stat-value" id="deckValue">100%</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">STEALTH</span>
+        <div class="stat-bar-outer stat-bar-stealth">
+          <div class="stat-bar-inner" id="stealthLevel" style="width: 80%;"></div>
+        </div>
+        <span class="stat-value" id="stealthValue">80%</span>
+      </div>
+    </div>
+
+    <!-- Action Log -->
+    <div class="panel-section">
+      <div class="panel-title">ACTION LOG</div>
+      <div class="action-log" id="actionLog">
+        <div class="log-entry"><span class="log-time">[00:01]</span> Neural handshake established</div>
+        <div class="log-entry"><span class="log-time">[00:02]</span> Deck online — scanning network topology</div>
+        <div class="log-entry"><span class="log-time">[00:03]</span> 8 nodes detected — mapping connections</div>
+        <div class="log-entry"><span class="log-time">[00:04]</span> Entry port accessed — you're in</div>
+        <div class="log-entry"><span class="log-time">[00:05]</span> Trace counter initialized — move fast</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<div class="dive-footer">
+  <a href="../../hub.html" class="jack-out-link">← JACK OUT // RETURN TO TERMINAL</a>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   NEON TERMINUS — DIVE INTERFACE ENGINE
+   ══════════════════════════════════════════════════════════════ */
+(function() {
+  'use strict';
+
+  // ── ICE descriptions by type ──
+  const ICE_INFO = {
+    'Watchdog': {
+      desc: 'Passive monitoring ICE. Continuously scans for unauthorized access patterns. If triggered, accelerates trace timer and alerts security nodes. Best approached with stealth protocols.',
+      threat: 'MODERATE'
+    },
+    'Barrier': {
+      desc: 'Defensive ICE. Blocks all traffic through this node until decrypted or overloaded. Standard corporate-grade — brute force is possible but noisy.',
+      threat: 'LOW-MODERATE'
+    },
+    'Probe': {
+      desc: 'Aggressive tracing ICE. Actively hunts intruder signatures and feeds location data to security. Doubles trace speed when active. Kill it fast or mask your signal.',
+      threat: 'HIGH'
+    },
+    'Killer': {
+      desc: 'Offensive ICE. Attacks deck integrity directly with feedback loops and buffer overflows. Sustained contact causes real neural damage through the deck link.',
+      threat: 'SEVERE'
+    },
+    'Black ICE': {
+      desc: 'LETHAL COUNTERMEASURE. Military-grade intrusion countermeasure electronics. Attacks the diver\'s neural link directly — biofeedback can cause cardiac arrest. Do not engage without preparation.',
+      threat: 'LETHAL'
+    }
+  };
+
+  // ── Data particle background ──
+  function initParticles() {
+    var container = document.getElementById('dataParticles');
+    var chars = '01アイウエオカキクケコ10110100101';
+    for (var i = 0; i < 30; i++) {
+      var p = document.createElement('div');
+      p.className = 'data-particle';
+      p.textContent = chars[Math.floor(Math.random() * chars.length)];
+      p.style.left = Math.random() * 100 + '%';
+      p.style.animationDuration = (8 + Math.random() * 12) + 's';
+      p.style.animationDelay = (Math.random() * 10) + 's';
+      container.appendChild(p);
+    }
+  }
+
+  // ── Update trace timer display ──
+  function updateTraceTimer() {
+    var container = document.getElementById('traceContainer');
+    var remaining = parseInt(container.dataset.roundsRemaining) || 0;
+    var total = parseInt(container.dataset.roundsTotal) || 1;
+    var pct = (remaining / total) * 100;
+
+    var bar = document.getElementById('traceBar');
+    var text = document.getElementById('traceText');
+    var status = document.getElementById('traceStatus');
+
+    bar.style.width = pct + '%';
+    text.textContent = 'TRACE: ' + remaining + ' ROUND' + (remaining !== 1 ? 'S' : '');
+
+    // Remove old state classes
+    container.className = 'trace-container';
+
+    if (pct <= 0) {
+      container.classList.add('trace-flatline');
+      status.textContent = 'STATUS: ██ FLATLINE ██';
+      status.style.color = '#ff3366';
+    } else if (pct <= 25) {
+      container.classList.add('trace-critical');
+      status.textContent = 'STATUS: CRITICAL — IMMINENT LOCK';
+      status.style.color = '#ff3366';
+    } else if (pct <= 50) {
+      container.classList.add('trace-warning');
+      status.textContent = 'STATUS: WARNING — TRACE CLOSING';
+      status.style.color = '#ffaa00';
+    } else {
+      container.classList.add('trace-safe');
+      status.textContent = 'STATUS: UNDETECTED';
+      status.style.color = '#00ffcc';
+    }
+  }
+
+  // ── Update connection line styles based on node states ──
+  function updateConnections() {
+    var lines = document.querySelectorAll('.node-connection');
+    lines.forEach(function(line) {
+      var fromId = line.dataset.from;
+      var toId = line.dataset.to;
+      var fromNode = document.getElementById(fromId);
+      var toNode = document.getElementById(toId);
+
+      if (!fromNode || !toNode) return;
+
+      var fromState = fromNode.dataset.state;
+      var toState = toNode.dataset.state;
+      var isPlayerAdjacent = (fromState === 'player' || toState === 'player');
+      var bothAccessible = (
+        ['accessible', 'accessed', 'player', 'compromised', 'ice-active'].indexOf(fromState) !== -1 &&
+        ['accessible', 'accessed', 'player', 'compromised', 'ice-active'].indexOf(toState) !== -1
+      );
+
+      line.classList.remove('active-path', 'locked-path');
+
+      if (isPlayerAdjacent && (
+        ['accessible', 'accessed', 'player', 'ice-active'].indexOf(fromState) !== -1 &&
+        ['accessible', 'accessed', 'player', 'ice-active'].indexOf(toState) !== -1
+      )) {
+        line.classList.add('active-path');
+      } else if (bothAccessible) {
+        line.classList.add('active-path');
+      } else {
+        line.classList.add('locked-path');
+      }
+    });
+  }
+
+  // ── Show node info in status panel ──
+  function showNodeInfo(nodeEl) {
+    var panel = document.getElementById('nodeInfoContent');
+    var name = nodeEl.dataset.name || 'Unknown';
+    var type = nodeEl.dataset.type || 'unknown';
+    var state = nodeEl.dataset.state || 'locked';
+    var contents = nodeEl.dataset.contents || '';
+
+    var stateLabels = {
+      'locked': 'LOCKED — Access Denied',
+      'accessible': 'ACCESSIBLE — Ready',
+      'accessed': 'ACCESSED — Data Retrieved',
+      'compromised': 'COMPROMISED — Unstable',
+      'player': 'CURRENT POSITION',
+      'ice-active': 'ICE ACTIVE — Threat Detected'
+    };
+
+    var html = '';
+    html += '<div class="node-info-name">' + escapeHtml(name) + '</div>';
+    html += '<div class="node-info-type type-' + type + '">' + type.toUpperCase() + ' NODE</div>';
+    html += '<div class="node-info-state">' + (stateLabels[state] || state.toUpperCase()) + '</div>';
+
+    if (contents && state !== 'locked') {
+      html += '<div class="node-info-contents">' + escapeHtml(contents) + '</div>';
+    } else if (state === 'locked') {
+      html += '<div class="node-info-contents" style="color:#ff3366;opacity:0.6;">[ ENCRYPTED — ACCESS REQUIRED ]</div>';
+    }
+
+    panel.innerHTML = html;
+
+    // Handle ICE panel
+    var icePanel = document.getElementById('icePanel');
+    var iceType = nodeEl.dataset.iceType;
+    var iceTier = nodeEl.dataset.iceTier;
+
+    if (iceType && iceTier && state !== 'accessed') {
+      var info = ICE_INFO[iceType] || { desc: 'Unknown ICE variant.', threat: 'UNKNOWN' };
+      document.getElementById('iceTypeName').textContent = iceType.toUpperCase();
+      document.getElementById('iceTier').textContent = 'TIER ' + iceTier + ' — THREAT: ' + info.threat;
+      document.getElementById('iceDescription').textContent = info.desc;
+      icePanel.classList.add('active');
+    } else {
+      icePanel.classList.remove('active');
+    }
+  }
+
+  // ── Show access denied popup ──
+  function showAccessDenied() {
+    var popup = document.getElementById('accessDenied');
+    popup.classList.add('show');
+    setTimeout(function() {
+      popup.classList.remove('show');
+    }, 1200);
+  }
+
+  // ── Escape HTML ──
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ── Node click handler ──
+  function handleNodeClick(e) {
+    var group = e.target.closest('.node-group');
+    if (!group) return;
+
+    var state = group.dataset.state;
+
+    if (state === 'locked') {
+      showAccessDenied();
+      // Still show limited info
+      showNodeInfo(group);
+      addLogEntry('Access denied — node is locked');
+      return;
+    }
+
+    showNodeInfo(group);
+
+    if (state === 'ice-active' && group.dataset.iceType) {
+      addLogEntry('ICE detected: ' + group.dataset.iceType + ' T' + group.dataset.iceTier);
+    } else if (state === 'accessible') {
+      addLogEntry('Scanning node: ' + (group.dataset.name || group.id));
+    } else if (state === 'player') {
+      addLogEntry('Current position: ' + (group.dataset.name || group.id));
+    } else if (state === 'accessed') {
+      addLogEntry('Reviewing: ' + (group.dataset.name || group.id));
+    }
+  }
+
+  // ── Add action log entry ──
+  var logCounter = 6;
+  function addLogEntry(text) {
+    var log = document.getElementById('actionLog');
+    var entry = document.createElement('div');
+    entry.className = 'log-entry';
+    var timeStr = '[' + String(logCounter).padStart(2, '0') + ':' + String(Math.floor(Math.random() * 59)).padStart(2, '0') + ']';
+    entry.innerHTML = '<span class="log-time">' + timeStr + '</span> ' + escapeHtml(text);
+    log.appendChild(entry);
+    logCounter++;
+
+    // Keep max 8 entries
+    while (log.children.length > 8) {
+      log.removeChild(log.firstChild);
+    }
+
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // ── Auto-sync: poll for updates every 5 seconds ──
+  function initAutoSync() {
+    setInterval(function() {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', window.location.href + '?t=' + Date.now(), true);
+      xhr.onload = function() {
+        if (xhr.status !== 200) return;
+
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(xhr.responseText, 'text/html');
+
+        // Sync trace timer
+        var newTrace = doc.getElementById('traceContainer');
+        var curTrace = document.getElementById('traceContainer');
+        if (newTrace && curTrace) {
+          curTrace.dataset.roundsRemaining = newTrace.dataset.roundsRemaining;
+          curTrace.dataset.roundsTotal = newTrace.dataset.roundsTotal;
+        }
+
+        // Sync node states
+        var newNodes = doc.querySelectorAll('.node-group');
+        newNodes.forEach(function(newNode) {
+          var curNode = document.getElementById(newNode.id);
+          if (!curNode) return;
+
+          var attrs = ['state', 'name', 'type', 'iceType', 'iceTier', 'contents'];
+          attrs.forEach(function(attr) {
+            var dataAttr = 'data-' + attr.replace(/([A-Z])/g, '-$1').toLowerCase();
+            var newVal = newNode.getAttribute(dataAttr);
+            if (newVal !== null) {
+              curNode.setAttribute(dataAttr, newVal);
+            }
+          });
+        });
+
+        // Sync deck/stealth stats
+        var newDeck = doc.getElementById('deckIntegrity');
+        var newStealth = doc.getElementById('stealthLevel');
+        if (newDeck) {
+          document.getElementById('deckIntegrity').style.width = newDeck.style.width;
+          document.getElementById('deckValue').textContent =
+            doc.getElementById('deckValue') ? doc.getElementById('deckValue').textContent : '';
+        }
+        if (newStealth) {
+          document.getElementById('stealthLevel').style.width = newStealth.style.width;
+          document.getElementById('stealthValue').textContent =
+            doc.getElementById('stealthValue') ? doc.getElementById('stealthValue').textContent : '';
+        }
+
+        // Apply updates
+        updateTraceTimer();
+        updateConnections();
+      };
+      xhr.send();
+    }, 5000);
+  }
+
+  // ── Initialize ──
+  function init() {
+    initParticles();
+    updateTraceTimer();
+    updateConnections();
+
+    // Node click events
+    document.getElementById('graphSvg').addEventListener('click', handleNodeClick);
+
+    // Auto-sync
+    initAutoSync();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
+</script>
+</body>
+</html>

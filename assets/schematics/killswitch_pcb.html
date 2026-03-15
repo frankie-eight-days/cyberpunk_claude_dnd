@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SERIES 9 KILLSWITCH — PCB ANALYSIS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cyan:#00ffcc;--magenta:#ff3366;--amber:#ffaa00;
+  --green:#00ff88;--bg:#0a0a0f;
+  --panel:#0d0d18;--border:#1a1a2e;--text:#c0c0d0;
+  --glow-cyan:0 0 8px #00ffcc88,0 0 20px #00ffcc44;
+  --glow-magenta:0 0 8px #ff336688,0 0 20px #ff336644;
+  --glow-amber:0 0 8px #ffaa0088,0 0 20px #ffaa0044;
+  --pcb-green:#1a3a1a;--copper:#cc8844;--soldermask:#1e4a1e;
+}
+html{font-size:16px}
+body{
+  font-family:'Share Tech Mono',monospace;color:var(--text);
+  background:var(--bg);min-height:100vh;overflow-x:hidden;
+  line-height:1.5;
+}
+
+/* SCANLINE OVERLAY */
+body::before{
+  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);
+}
+
+/* CRT VIGNETTE */
+body::after{
+  content:'';position:fixed;inset:0;z-index:9998;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,0.55) 100%);
+}
+
+/* HEADER */
+.header{
+  padding:20px 30px 15px;border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,#0d0d1a 0%,var(--bg) 100%);
+  position:relative;
+}
+.header h1{
+  font-family:'Orbitron',sans-serif;font-weight:700;font-size:1.4rem;
+  color:var(--cyan);letter-spacing:3px;
+  text-shadow:0 0 10px #00ffcc66,0 0 30px #00ffcc33;
+}
+.header .subtitle{
+  font-size:0.75rem;color:#666;letter-spacing:2px;margin-top:4px;
+}
+.header .classified{
+  position:absolute;right:30px;top:50%;transform:translateY(-50%);
+  font-family:'Orbitron',sans-serif;font-size:0.7rem;
+  color:var(--magenta);letter-spacing:3px;
+  border:1px solid var(--magenta);padding:4px 12px;
+  animation:pulse-border 2s ease-in-out infinite;
+}
+@keyframes pulse-border{
+  0%,100%{border-color:#ff336666;box-shadow:none}
+  50%{border-color:var(--magenta);box-shadow:0 0 10px #ff336644}
+}
+
+/* BACK LINK */
+.back-link{
+  display:inline-block;padding:10px 30px 0;
+  color:var(--cyan);text-decoration:none;font-size:0.8rem;
+  letter-spacing:1px;opacity:0.7;transition:opacity 0.3s;
+}
+.back-link:hover{opacity:1;text-shadow:var(--glow-cyan)}
+
+/* MAIN LAYOUT */
+.main-container{
+  display:flex;gap:0;min-height:calc(100vh - 160px);
+}
+.pcb-area{
+  flex:0 0 62%;padding:20px;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.detail-panel{
+  flex:0 0 38%;border-left:1px solid var(--border);
+  background:var(--panel);padding:0;overflow-y:auto;
+  max-height:calc(100vh - 160px);
+}
+
+/* PCB SVG CONTAINER */
+.pcb-wrapper{
+  position:relative;width:100%;max-width:700px;
+}
+.pcb-wrapper svg{
+  width:100%;height:auto;filter:drop-shadow(0 0 20px rgba(0,255,204,0.1));
+}
+
+/* ZOOM LABEL */
+.zoom-label{
+  position:absolute;bottom:8px;left:12px;
+  font-size:0.65rem;color:#444;letter-spacing:1px;
+}
+
+/* SVG COMPONENT STYLES */
+.component{cursor:pointer;transition:filter 0.2s}
+.component:hover{filter:brightness(1.3)}
+.component.selected .comp-body{stroke:var(--cyan);stroke-width:1.5}
+.component.unidentified .comp-body{
+  stroke:var(--amber);stroke-width:1;
+  animation:pulse-amber 1.8s ease-in-out infinite;
+}
+@keyframes pulse-amber{
+  0%,100%{stroke-opacity:0.4}
+  50%{stroke-opacity:1}
+}
+
+/* TRACE HIGHLIGHTING */
+.trace{transition:stroke 0.3s,stroke-opacity 0.3s}
+.trace.highlighted{stroke:var(--cyan) !important;stroke-opacity:1 !important}
+
+/* TOOLTIP */
+.svg-tooltip{
+  position:fixed;background:#0d0d18ee;border:1px solid var(--cyan);
+  padding:6px 12px;font-size:0.7rem;color:var(--cyan);
+  pointer-events:none;z-index:1000;letter-spacing:1px;
+  box-shadow:var(--glow-cyan);display:none;
+  font-family:'Share Tech Mono',monospace;
+}
+
+/* DETAIL PANEL CONTENT */
+.detail-header{
+  padding:20px;border-bottom:1px solid var(--border);
+  font-family:'Orbitron',sans-serif;font-size:0.8rem;
+  color:var(--cyan);letter-spacing:2px;
+}
+.detail-empty{
+  padding:40px 20px;text-align:center;color:#444;font-size:0.8rem;
+}
+.detail-empty .icon{font-size:2rem;margin-bottom:10px;color:#333}
+.detail-content{padding:20px;display:none}
+.detail-content.active{display:block}
+
+.detail-content .comp-designator{
+  font-family:'Orbitron',sans-serif;font-size:1rem;
+  color:var(--cyan);letter-spacing:2px;margin-bottom:4px;
+}
+.detail-content .comp-name{
+  font-size:0.85rem;color:var(--text);margin-bottom:15px;
+}
+
+.status-badge{
+  display:inline-block;padding:3px 10px;font-size:0.65rem;
+  letter-spacing:2px;border-radius:2px;margin-bottom:15px;
+}
+.status-badge.analyzed{background:#00ff8822;color:var(--green);border:1px solid #00ff8844}
+.status-badge.partial{background:#ffaa0022;color:var(--amber);border:1px solid #ffaa0044}
+.status-badge.unidentified{
+  background:#ff336622;color:var(--magenta);border:1px solid #ff336644;
+  animation:pulse-badge 1.5s ease-in-out infinite;
+}
+@keyframes pulse-badge{
+  0%,100%{opacity:0.7}50%{opacity:1}
+}
+
+.detail-section{margin-bottom:18px}
+.detail-section .label{
+  font-size:0.65rem;color:#555;letter-spacing:2px;margin-bottom:5px;
+  text-transform:uppercase;
+}
+.detail-section .value{
+  font-size:0.8rem;color:var(--text);line-height:1.6;
+}
+.detail-section .notes{
+  font-size:0.78rem;color:#88aaaa;font-style:italic;
+  line-height:1.6;border-left:2px solid #333;padding-left:12px;
+}
+.detail-section .unknown{color:var(--magenta)}
+
+.analysis-warning{
+  background:#ff336612;border:1px solid #ff336633;
+  padding:12px 15px;margin-top:15px;font-size:0.75rem;
+  color:var(--magenta);letter-spacing:1px;
+}
+.analysis-warning::before{content:'⚠ '}
+
+/* PROGRESS BAR */
+.progress-bar-container{
+  padding:15px 30px;border-top:1px solid var(--border);
+  background:var(--panel);display:flex;align-items:center;gap:20px;
+}
+.progress-label{
+  font-size:0.7rem;color:#666;letter-spacing:2px;white-space:nowrap;
+  font-family:'Orbitron',sans-serif;
+}
+.progress-track{
+  flex:1;height:6px;background:#111;border-radius:3px;overflow:hidden;
+  border:1px solid #1a1a2e;
+}
+.progress-fill{
+  height:100%;background:linear-gradient(90deg,#00ffcc,#00ccaa);
+  border-radius:3px;transition:width 0.5s ease;
+  box-shadow:0 0 8px #00ffcc66;
+}
+.progress-count{
+  font-size:0.75rem;color:var(--cyan);letter-spacing:1px;white-space:nowrap;
+}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .main-container{flex-direction:column}
+  .pcb-area{flex:none;padding:10px}
+  .detail-panel{
+    flex:none;border-left:none;border-top:1px solid var(--border);
+    max-height:none;min-height:300px;
+  }
+  .header .classified{position:static;transform:none;margin-top:8px;display:inline-block}
+  .progress-bar-container{flex-wrap:wrap;gap:10px}
+}
+</style>
+</head>
+<body>
+
+<a href="../../hub.html" class="back-link">&#8592; RETURN TO TERMINAL</a>
+
+<div class="header">
+  <h1>SERIES 9 KILLSWITCH &mdash; PCB ANALYSIS</h1>
+  <div class="subtitle">HUANG WEI BIOMEDICAL // NEURAL IMPLANT DIVISION</div>
+  <div class="classified">CLASSIFIED</div>
+</div>
+
+<div class="main-container">
+  <div class="pcb-area">
+    <div class="pcb-wrapper">
+      <svg viewBox="0 0 660 450" xmlns="http://www.w3.org/2000/svg" id="pcb-svg">
+        <defs>
+          <!-- PCB texture pattern -->
+          <pattern id="pcb-texture" width="4" height="4" patternUnits="userSpaceOnUse">
+            <rect width="4" height="4" fill="#1a3a1a"/>
+            <rect x="0" y="0" width="1" height="1" fill="#1b3d1b" opacity="0.5"/>
+            <rect x="2" y="2" width="1" height="1" fill="#193819" opacity="0.5"/>
+          </pattern>
+          <!-- Ground plane hatch -->
+          <pattern id="ground-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="8" stroke="#1e3e1e" stroke-width="0.5"/>
+          </pattern>
+          <!-- Copper fill -->
+          <linearGradient id="copper-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#cc8844"/>
+            <stop offset="100%" stop-color="#aa7733"/>
+          </linearGradient>
+          <!-- Cyan glow filter -->
+          <filter id="glow-cyan" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <!-- Amber glow filter -->
+          <filter id="glow-amber" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <!-- Gold pad gradient -->
+          <linearGradient id="gold-pad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#e8c84a"/>
+            <stop offset="100%" stop-color="#b8962a"/>
+          </linearGradient>
+        </defs>
+
+        <!-- BOARD OUTLINE -->
+        <rect x="30" y="25" width="600" height="400" rx="12" ry="12" fill="url(#pcb-texture)" stroke="#2a5a2a" stroke-width="2"/>
+        <!-- Ground plane layer -->
+        <rect x="35" y="30" width="590" height="390" rx="10" ry="10" fill="url(#ground-hatch)" opacity="0.4"/>
+        <!-- Board edge cut line -->
+        <rect x="30" y="25" width="600" height="400" rx="12" ry="12" fill="none" stroke="#aaaa00" stroke-width="0.5" stroke-dasharray="6,4" opacity="0.4"/>
+
+        <!-- SILKSCREEN TEXT -->
+        <text x="55" y="52" fill="#cccccc" font-size="8" font-family="'Share Tech Mono',monospace" opacity="0.6">HW-S9-KS REV 3.2</text>
+        <text x="430" y="52" fill="#cccccc" font-size="6.5" font-family="'Share Tech Mono',monospace" opacity="0.45">HUANG WEI BIOMEDICAL</text>
+        <text x="55" y="410" fill="#cccccc" font-size="6" font-family="'Share Tech Mono',monospace" opacity="0.35">22mm x 15mm</text>
+        <text x="530" y="410" fill="#cccccc" font-size="6" font-family="'Share Tech Mono',monospace" opacity="0.35">LAYER: TOP</text>
+
+        <!-- ============================================================
+             COPPER TRACES
+             ============================================================ -->
+        <!-- MCU to RF Transceiver (SPI bus) -->
+        <polyline class="trace" data-connects="U1,U2" points="370,195 400,195 400,140 430,140 430,120 460,120" fill="none" stroke="#cc8844" stroke-width="1.8" opacity="0.7"/>
+        <polyline class="trace" data-connects="U1,U2" points="370,205 410,205 410,150 440,150 440,130 460,130" fill="none" stroke="#cc8844" stroke-width="1.8" opacity="0.7"/>
+
+        <!-- RF to Antenna (matched line) -->
+        <polyline class="trace" data-connects="U2,ANT1" points="520,95 520,70 500,70 500,55 480,55" fill="none" stroke="#cc8844" stroke-width="2.2" opacity="0.8"/>
+        <!-- Pi-network components inline -->
+        <rect x="485" y="60" width="8" height="5" fill="#444" stroke="#888" stroke-width="0.5" opacity="0.6"/>
+        <text x="484" y="58" fill="#999" font-size="4" opacity="0.5">C3</text>
+        <rect x="497" y="55" width="5" height="8" fill="#444" stroke="#888" stroke-width="0.5" opacity="0.6"/>
+        <text x="496" y="52" fill="#999" font-size="4" opacity="0.5">L1</text>
+        <rect x="507" y="60" width="8" height="5" fill="#444" stroke="#888" stroke-width="0.5" opacity="0.6"/>
+        <text x="507" y="58" fill="#999" font-size="4" opacity="0.5">C4</text>
+
+        <!-- MCU to Mystery IC (high-speed differential) -->
+        <polyline class="trace" data-connects="U1,U3" points="280,230 280,270 230,270 230,290 180,290" fill="none" stroke="#cc8844" stroke-width="1.5" opacity="0.7"/>
+        <polyline class="trace" data-connects="U1,U3" points="280,240 275,275 225,275 225,295 180,295" fill="none" stroke="#cc8844" stroke-width="1.5" opacity="0.7"/>
+
+        <!-- Mystery IC to Neural Interface -->
+        <polyline class="trace" data-connects="U3,J1" points="145,320 145,350 160,350 160,370" fill="none" stroke="#cc8844" stroke-width="2" opacity="0.7"/>
+        <polyline class="trace" data-connects="U3,J1" points="155,320 155,345 180,345 180,370" fill="none" stroke="#cc8844" stroke-width="2" opacity="0.7"/>
+        <polyline class="trace" data-connects="U3,J1" points="165,320 175,355 200,355 200,370" fill="none" stroke="#cc8844" stroke-width="2" opacity="0.7"/>
+        <polyline class="trace" data-connects="U3,J1" points="130,320 130,360 220,360 220,370" fill="none" stroke="#cc8844" stroke-width="2" opacity="0.7"/>
+
+        <!-- MCU to VREG (power) -->
+        <polyline class="trace" data-connects="U1,VREG" points="370,230 420,230 420,310 470,310" fill="none" stroke="#cc8844" stroke-width="2.5" opacity="0.6"/>
+
+        <!-- VREG to MCU power (wide trace) -->
+        <polyline class="trace" data-connects="VREG,U1" points="470,320 440,320 440,245 370,245" fill="none" stroke="#cc8844" stroke-width="3" opacity="0.5"/>
+
+        <!-- MCU to Test Points -->
+        <polyline class="trace" data-connects="U1,TP" points="310,175 310,140 340,140 340,120" fill="none" stroke="#cc8844" stroke-width="1.2" opacity="0.6"/>
+        <polyline class="trace" data-connects="U1,TP" points="330,175 330,150 370,150 370,120" fill="none" stroke="#cc8844" stroke-width="1.2" opacity="0.6"/>
+
+        <!-- Power distribution traces -->
+        <polyline class="trace" data-connects="VREG,U2" points="510,300 540,300 540,160 510,160 510,145" fill="none" stroke="#cc8844" stroke-width="2" opacity="0.5"/>
+        <polyline class="trace" data-connects="VREG,U3" points="470,325 400,325 400,350 250,350 250,310 180,310" fill="none" stroke="#cc8844" stroke-width="2" opacity="0.5"/>
+
+        <!-- ============================================================
+             VIA HOLES
+             ============================================================ -->
+        <g class="vias" opacity="0.8">
+          <circle cx="400" cy="195" r="3.5" fill="#1a3a1a" stroke="#cc8844" stroke-width="1.5"/>
+          <circle cx="400" cy="195" r="1.5" fill="#222"/>
+          <circle cx="440" cy="130" r="3.5" fill="#1a3a1a" stroke="#cc8844" stroke-width="1.5"/>
+          <circle cx="440" cy="130" r="1.5" fill="#222"/>
+          <circle cx="230" cy="270" r="3.5" fill="#1a3a1a" stroke="#cc8844" stroke-width="1.5"/>
+          <circle cx="230" cy="270" r="1.5" fill="#222"/>
+          <circle cx="420" cy="310" r="3.5" fill="#1a3a1a" stroke="#cc8844" stroke-width="1.5"/>
+          <circle cx="420" cy="310" r="1.5" fill="#222"/>
+          <circle cx="540" cy="300" r="3.5" fill="#1a3a1a" stroke="#cc8844" stroke-width="1.5"/>
+          <circle cx="540" cy="300" r="1.5" fill="#222"/>
+          <circle cx="250" cy="350" r="3" fill="#1a3a1a" stroke="#cc8844" stroke-width="1.2"/>
+          <circle cx="250" cy="350" r="1.2" fill="#222"/>
+          <circle cx="400" cy="350" r="3" fill="#1a3a1a" stroke="#cc8844" stroke-width="1.2"/>
+          <circle cx="400" cy="350" r="1.2" fill="#222"/>
+          <circle cx="310" cy="140" r="3" fill="#1a3a1a" stroke="#cc8844" stroke-width="1.2"/>
+          <circle cx="310" cy="140" r="1.2" fill="#222"/>
+        </g>
+
+        <!-- ============================================================
+             COMPONENT: U1 — Main MCU (QFP, center)
+             ============================================================ -->
+        <g class="component" id="comp-U1"
+           data-name="U1 — Microcontroller"
+           data-identified="true"
+           data-details="ARM Cortex-M4 derivative. Custom Huang Wei silicon. Runs encrypted firmware. 256KB flash, 64KB SRAM."
+           data-notes="Standard embedded controller. Firmware is encrypted — need the key or a JTAG exploit."
+           data-status="PARTIALLY ANALYZED"
+           data-connects="U2,U3,VREG,TP">
+          <!-- QFP body -->
+          <rect class="comp-body" x="280" y="175" width="90" height="70" rx="3" ry="3" fill="#222" stroke="#555" stroke-width="1"/>
+          <!-- Pin 1 dot -->
+          <circle cx="290" cy="185" r="2" fill="#888"/>
+          <!-- Top pins -->
+          <g fill="#aa7733">
+            <rect x="290" y="168" width="3" height="9"/><rect x="300" y="168" width="3" height="9"/>
+            <rect x="310" y="168" width="3" height="9"/><rect x="320" y="168" width="3" height="9"/>
+            <rect x="330" y="168" width="3" height="9"/><rect x="340" y="168" width="3" height="9"/>
+            <rect x="350" y="168" width="3" height="9"/><rect x="360" y="168" width="3" height="9"/>
+          </g>
+          <!-- Bottom pins -->
+          <g fill="#aa7733">
+            <rect x="290" y="243" width="3" height="9"/><rect x="300" y="243" width="3" height="9"/>
+            <rect x="310" y="243" width="3" height="9"/><rect x="320" y="243" width="3" height="9"/>
+            <rect x="330" y="243" width="3" height="9"/><rect x="340" y="243" width="3" height="9"/>
+            <rect x="350" y="243" width="3" height="9"/><rect x="360" y="243" width="3" height="9"/>
+          </g>
+          <!-- Left pins -->
+          <g fill="#aa7733">
+            <rect x="272" y="185" width="9" height="3"/><rect x="272" y="195" width="9" height="3"/>
+            <rect x="272" y="205" width="9" height="3"/><rect x="272" y="215" width="9" height="3"/>
+            <rect x="272" y="225" width="9" height="3"/><rect x="272" y="235" width="9" height="3"/>
+          </g>
+          <!-- Right pins -->
+          <g fill="#aa7733">
+            <rect x="369" y="185" width="9" height="3"/><rect x="369" y="195" width="9" height="3"/>
+            <rect x="369" y="205" width="9" height="3"/><rect x="369" y="215" width="9" height="3"/>
+            <rect x="369" y="225" width="9" height="3"/><rect x="369" y="235" width="9" height="3"/>
+          </g>
+          <!-- Die marking -->
+          <rect x="300" y="190" width="50" height="42" fill="none" stroke="#333" stroke-width="0.5"/>
+          <text x="313" y="215" fill="#444" font-size="8" font-family="'Share Tech Mono',monospace">HW-M4</text>
+          <!-- Silkscreen label -->
+          <text x="285" y="265" fill="#cccccc" font-size="7" font-family="'Share Tech Mono',monospace" opacity="0.7">U1</text>
+        </g>
+
+        <!-- ============================================================
+             COMPONENT: U2 — RF Transceiver (QFN, upper right)
+             ============================================================ -->
+        <g class="component" id="comp-U2"
+           data-name="U2 — RF Frontend"
+           data-identified="true"
+           data-details="Sub-GHz transceiver. 915 MHz ISM band. Matched to on-board antenna trace. FHSS capability."
+           data-notes="This is how it phones home. Frequency-hopping spread spectrum — hard to jam for more than a few seconds."
+           data-status="ANALYZED"
+           data-connects="U1,ANT1,VREG">
+          <!-- QFN body (no visible pins) -->
+          <rect class="comp-body" x="460" y="95" width="55" height="55" rx="2" ry="2" fill="#2a2a2a" stroke="#555" stroke-width="1"/>
+          <!-- Exposed pad (center) -->
+          <rect x="472" y="107" width="30" height="30" fill="#886633" opacity="0.6" rx="1"/>
+          <!-- Edge pads (tiny) -->
+          <g fill="#aa7733" opacity="0.7">
+            <rect x="465" y="100" width="5" height="2"/><rect x="465" y="108" width="5" height="2"/>
+            <rect x="465" y="116" width="5" height="2"/><rect x="465" y="124" width="5" height="2"/>
+            <rect x="465" y="132" width="5" height="2"/><rect x="465" y="140" width="5" height="2"/>
+            <rect x="505" y="100" width="5" height="2"/><rect x="505" y="108" width="5" height="2"/>
+            <rect x="505" y="116" width="5" height="2"/><rect x="505" y="124" width="5" height="2"/>
+            <rect x="505" y="132" width="5" height="2"/><rect x="505" y="140" width="5" height="2"/>
+            <rect x="475" y="92" width="2" height="5"/><rect x="483" y="92" width="2" height="5"/>
+            <rect x="491" y="92" width="2" height="5"/><rect x="499" y="92" width="2" height="5"/>
+            <rect x="475" y="148" width="2" height="5"/><rect x="483" y="148" width="2" height="5"/>
+            <rect x="491" y="148" width="2" height="5"/><rect x="499" y="148" width="2" height="5"/>
+          </g>
+          <!-- Die text -->
+          <text x="475" y="127" fill="#444" font-size="7" font-family="'Share Tech Mono',monospace">RF-9</text>
+          <text x="463" y="165" fill="#cccccc" font-size="7" font-family="'Share Tech Mono',monospace" opacity="0.7">U2</text>
+        </g>
+
+        <!-- ============================================================
+             COMPONENT: ANT1 — PCB Antenna (meandering trace, top edge)
+             ============================================================ -->
+        <g class="component" id="comp-ANT1"
+           data-name="ANT1 — PCB Antenna"
+           data-identified="true"
+           data-details="915 MHz meandered inverted-F antenna. Impedance-matched to U2 via pi-network (C3, L1, C4)."
+           data-notes="Designed for sub-dermal operation. Tissue loading shifts resonance — they compensated with a wider bandwidth design. Clever."
+           data-status="ANALYZED"
+           data-connects="U2">
+          <!-- Meandering antenna trace -->
+          <polyline class="comp-body" points="480,55 460,55 460,42 420,42 420,55 400,55 400,42 360,42 360,55 340,55 340,42 310,42 310,55 290,55 290,42 260,42 260,55 240,55" fill="none" stroke="#cc8844" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- Ground clearance zone (keep-out) -->
+          <rect x="235" y="35" width="250" height="28" fill="none" stroke="#ffaa00" stroke-width="0.4" stroke-dasharray="3,3" opacity="0.3"/>
+          <text x="240" y="75" fill="#cccccc" font-size="7" font-family="'Share Tech Mono',monospace" opacity="0.7">ANT1</text>
+          <text x="300" y="75" fill="#666" font-size="5" font-family="'Share Tech Mono',monospace" opacity="0.5">915 MHz INV-F</text>
+        </g>
+
+        <!-- ============================================================
+             COMPONENT: U3 — Mystery IC (BGA, lower left)
+             ============================================================ -->
+        <g class="component unidentified" id="comp-U3"
+           data-name="U3 — Unknown IC"
+           data-identified="false"
+           data-details="UNKNOWN — No markings. Custom package. Connected to neural interface pads and MCU via high-speed differential pairs."
+           data-notes="This is the killswitch mechanism. Whatever this chip does, it's the thing that interfaces directly with neural tissue. Need to decap and analyze."
+           data-status="UNIDENTIFIED"
+           data-connects="U1,J1,VREG">
+          <!-- BGA body -->
+          <rect class="comp-body" x="115" y="275" width="70" height="50" rx="3" ry="3" fill="#1a1a1a" stroke="#ffaa00" stroke-width="1"/>
+          <!-- BGA ball grid -->
+          <g fill="#886633" opacity="0.5">
+            <circle cx="130" cy="288" r="2.5"/><circle cx="142" cy="288" r="2.5"/><circle cx="154" cy="288" r="2.5"/><circle cx="166" cy="288" r="2.5"/>
+            <circle cx="130" cy="300" r="2.5"/><circle cx="142" cy="300" r="2.5"/><circle cx="154" cy="300" r="2.5"/><circle cx="166" cy="300" r="2.5"/>
+            <circle cx="130" cy="312" r="2.5"/><circle cx="142" cy="312" r="2.5"/><circle cx="154" cy="312" r="2.5"/><circle cx="166" cy="312" r="2.5"/>
+          </g>
+          <!-- Question marks (unknown) -->
+          <text x="135" y="303" fill="#ffaa00" font-size="14" font-family="'Orbitron',sans-serif" font-weight="700" opacity="0.6">???</text>
+          <text x="118" y="340" fill="#ffaa00" font-size="7" font-family="'Share Tech Mono',monospace" opacity="0.8">U3</text>
+        </g>
+
+        <!-- ============================================================
+             COMPONENT: J1 — Neural Interface Pads (bottom edge)
+             ============================================================ -->
+        <g class="component" id="comp-J1"
+           data-name="J1 — Neural Interface Array"
+           data-identified="true"
+           data-details="8-pad neural interface. Gold-plated. Biocompatible coating detected. Pads 1-4: stimulation. Pads 5-8: sensing."
+           data-notes="Stimulation AND sensing. It can read neural activity and inject signals. The stimulation pads are what make it lethal — enough current through the right neural pathway..."
+           data-status="ANALYZED"
+           data-connects="U3">
+          <!-- Interface pad array -->
+          <g>
+            <rect class="comp-body" x="100" y="370" width="190" height="30" rx="2" ry="2" fill="none" stroke="#555" stroke-width="0.8"/>
+            <!-- Stimulation pads (1-4) -->
+            <rect x="110" y="375" width="18" height="20" rx="1" fill="url(#gold-pad)" stroke="#c0a030" stroke-width="0.5"/>
+            <text x="115" y="390" fill="#333" font-size="6" font-weight="bold">S1</text>
+            <rect x="133" y="375" width="18" height="20" rx="1" fill="url(#gold-pad)" stroke="#c0a030" stroke-width="0.5"/>
+            <text x="138" y="390" fill="#333" font-size="6" font-weight="bold">S2</text>
+            <rect x="156" y="375" width="18" height="20" rx="1" fill="url(#gold-pad)" stroke="#c0a030" stroke-width="0.5"/>
+            <text x="161" y="390" fill="#333" font-size="6" font-weight="bold">S3</text>
+            <rect x="179" y="375" width="18" height="20" rx="1" fill="url(#gold-pad)" stroke="#c0a030" stroke-width="0.5"/>
+            <text x="184" y="390" fill="#333" font-size="6" font-weight="bold">S4</text>
+            <!-- Divider -->
+            <line x1="202" y1="373" x2="202" y2="398" stroke="#555" stroke-width="0.5" stroke-dasharray="2,2"/>
+            <!-- Sensing pads (5-8) -->
+            <rect x="207" y="375" width="18" height="20" rx="1" fill="url(#gold-pad)" stroke="#70a060" stroke-width="0.5"/>
+            <text x="211" y="390" fill="#333" font-size="6" font-weight="bold">R5</text>
+            <rect x="230" y="375" width="18" height="20" rx="1" fill="url(#gold-pad)" stroke="#70a060" stroke-width="0.5"/>
+            <text x="234" y="390" fill="#333" font-size="6" font-weight="bold">R6</text>
+            <rect x="253" y="375" width="18" height="20" rx="1" fill="url(#gold-pad)" stroke="#70a060" stroke-width="0.5"/>
+            <text x="257" y="390" fill="#333" font-size="6" font-weight="bold">R7</text>
+            <rect x="276" y="375" width="18" height="20" rx="1" fill="url(#gold-pad)" stroke="#70a060" stroke-width="0.5"/>
+            <text x="280" y="390" fill="#333" font-size="6" font-weight="bold">R8</text>
+          </g>
+          <text x="103" y="415" fill="#cccccc" font-size="7" font-family="'Share Tech Mono',monospace" opacity="0.7">J1 — NEURAL INTERFACE</text>
+          <text x="110" y="368" fill="#ffaa00" font-size="5" opacity="0.5">STIM</text>
+          <text x="225" y="368" fill="#00ff88" font-size="5" opacity="0.5">SENSE</text>
+        </g>
+
+        <!-- ============================================================
+             COMPONENT: VREG — Voltage Regulator (SOT-23, lower right)
+             ============================================================ -->
+        <g class="component" id="comp-VREG"
+           data-name="VREG — Voltage Regulator"
+           data-identified="true"
+           data-details="3.3V LDO regulator. Powers MCU and RF section. Input from bio-harvesting circuit."
+           data-notes="Harvests power from body heat and movement. No battery — this thing runs forever as long as the host is alive."
+           data-status="ANALYZED"
+           data-connects="U1,U2,U3">
+          <!-- SOT-23 body -->
+          <rect class="comp-body" x="470" y="298" width="35" height="28" rx="2" ry="2" fill="#222" stroke="#555" stroke-width="1"/>
+          <!-- 3 pins left side -->
+          <rect x="463" y="303" width="8" height="3" fill="#aa7733"/>
+          <rect x="463" y="313" width="8" height="3" fill="#aa7733"/>
+          <rect x="463" y="318" width="8" height="3" fill="#aa7733"/>
+          <!-- 2 pins right side (SOT-23-5) -->
+          <rect x="504" y="305" width="8" height="3" fill="#aa7733"/>
+          <rect x="504" y="316" width="8" height="3" fill="#aa7733"/>
+          <!-- Label -->
+          <text x="477" y="316" fill="#444" font-size="6" font-family="'Share Tech Mono',monospace">3V3</text>
+          <text x="473" y="340" fill="#cccccc" font-size="7" font-family="'Share Tech Mono',monospace" opacity="0.7">VREG</text>
+        </g>
+
+        <!-- ============================================================
+             COMPONENT: PASSIVES (scattered)
+             ============================================================ -->
+        <g class="component" id="comp-PASSIVES"
+           data-name="Passive Components"
+           data-identified="true"
+           data-details="Decoupling capacitors, pull-up resistors, power filtering. Standard support components."
+           data-notes="Nothing unusual here. Standard embedded design practice."
+           data-status="ANALYZED"
+           data-connects="">
+          <!-- C1 near MCU -->
+          <rect class="comp-body" x="265" y="155" width="10" height="6" fill="#3a3a2a" stroke="#666" stroke-width="0.5"/>
+          <text x="263" y="152" fill="#999" font-size="4.5" opacity="0.6">C1</text>
+          <!-- C2 near VREG -->
+          <rect class="comp-body" x="520" y="290" width="10" height="6" fill="#3a3a2a" stroke="#666" stroke-width="0.5"/>
+          <text x="519" y="288" fill="#999" font-size="4.5" opacity="0.6">C2</text>
+          <!-- R1 -->
+          <rect class="comp-body" x="390" y="170" width="6" height="10" fill="#3a2a2a" stroke="#666" stroke-width="0.5"/>
+          <text x="398" y="178" fill="#999" font-size="4.5" opacity="0.6">R1</text>
+          <!-- R2 -->
+          <rect class="comp-body" x="390" y="250" width="6" height="10" fill="#3a2a2a" stroke="#666" stroke-width="0.5"/>
+          <text x="398" y="258" fill="#999" font-size="4.5" opacity="0.6">R2</text>
+          <!-- R3 -->
+          <rect class="comp-body" x="245" y="260" width="10" height="6" fill="#3a2a2a" stroke="#666" stroke-width="0.5"/>
+          <text x="244" y="257" fill="#999" font-size="4.5" opacity="0.6">R3</text>
+          <!-- R4 -->
+          <rect class="comp-body" x="445" y="270" width="10" height="6" fill="#3a2a2a" stroke="#666" stroke-width="0.5"/>
+          <text x="444" y="268" fill="#999" font-size="4.5" opacity="0.6">R4</text>
+          <!-- Extra decoupling caps -->
+          <rect x="540" y="160" width="8" height="5" fill="#3a3a2a" stroke="#666" stroke-width="0.4" opacity="0.7"/>
+          <rect x="448" y="160" width="5" height="8" fill="#3a3a2a" stroke="#666" stroke-width="0.4" opacity="0.7"/>
+        </g>
+
+        <!-- ============================================================
+             COMPONENT: TP1/TP2 — Test Points (near MCU)
+             ============================================================ -->
+        <g class="component unidentified" id="comp-TP"
+           data-name="TP1/TP2 — Test Points"
+           data-identified="false"
+           data-details="UNKNOWN — Could be JTAG/SWD debug interface. Or factory programming pads. Need to probe with oscilloscope."
+           data-notes=""
+           data-status="UNIDENTIFIED"
+           data-connects="U1">
+          <!-- TP1 -->
+          <circle class="comp-body" cx="340" cy="110" r="6" fill="#1a3a1a" stroke="#ffaa00" stroke-width="1"/>
+          <circle cx="340" cy="110" r="3.5" fill="#cc8844"/>
+          <text x="349" y="113" fill="#ffaa00" font-size="6" font-family="'Share Tech Mono',monospace" opacity="0.8">TP1</text>
+          <!-- TP2 -->
+          <circle class="comp-body" cx="370" cy="110" r="6" fill="#1a3a1a" stroke="#ffaa00" stroke-width="1"/>
+          <circle cx="370" cy="110" r="3.5" fill="#cc8844"/>
+          <text x="379" y="113" fill="#ffaa00" font-size="6" font-family="'Share Tech Mono',monospace" opacity="0.8">TP2</text>
+          <!-- Debug header silkscreen -->
+          <rect x="330" y="98" width="50" height="24" fill="none" stroke="#555" stroke-width="0.4" stroke-dasharray="2,2" opacity="0.4"/>
+          <text x="335" y="96" fill="#999" font-size="4" opacity="0.4">DEBUG?</text>
+        </g>
+
+        <!-- Fiducial marks -->
+        <circle cx="55" cy="50" r="4" fill="none" stroke="#cc8844" stroke-width="1" opacity="0.3"/>
+        <circle cx="55" cy="50" r="1.5" fill="#cc8844" opacity="0.3"/>
+        <circle cx="605" cy="50" r="4" fill="none" stroke="#cc8844" stroke-width="1" opacity="0.3"/>
+        <circle cx="605" cy="50" r="1.5" fill="#cc8844" opacity="0.3"/>
+        <circle cx="55" cy="400" r="4" fill="none" stroke="#cc8844" stroke-width="1" opacity="0.3"/>
+        <circle cx="55" cy="400" r="1.5" fill="#cc8844" opacity="0.3"/>
+        <circle cx="605" cy="400" r="4" fill="none" stroke="#cc8844" stroke-width="1" opacity="0.3"/>
+        <circle cx="605" cy="400" r="1.5" fill="#cc8844" opacity="0.3"/>
+
+      </svg>
+      <div class="zoom-label">MAGNIFICATION: 18x &mdash; OPTICAL + XRAY COMPOSITE</div>
+    </div>
+  </div>
+
+  <div class="detail-panel">
+    <div class="detail-header">COMPONENT ANALYSIS</div>
+    <div class="detail-empty" id="detail-empty">
+      <div class="icon">&#9783;</div>
+      SELECT A COMPONENT ON THE PCB<br/>TO VIEW ANALYSIS DATA
+    </div>
+    <div class="detail-content" id="detail-content">
+      <div class="comp-designator" id="dc-designator"></div>
+      <div class="comp-name" id="dc-name"></div>
+      <div id="dc-status-wrap"></div>
+      <div class="detail-section">
+        <div class="label">TECHNICAL DATA</div>
+        <div class="value" id="dc-details"></div>
+      </div>
+      <div class="detail-section" id="dc-notes-section">
+        <div class="label">ENGINEER'S NOTES</div>
+        <div class="notes" id="dc-notes"></div>
+      </div>
+      <div id="dc-warning"></div>
+    </div>
+  </div>
+</div>
+
+<div class="progress-bar-container">
+  <div class="progress-label">BOARD ANALYSIS</div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill" style="width:75%"></div>
+  </div>
+  <div class="progress-count" id="progress-count">6 / 8 COMPONENTS IDENTIFIED</div>
+</div>
+
+<!-- Tooltip -->
+<div class="svg-tooltip" id="tooltip"></div>
+
+<script>
+(function(){
+  const components = document.querySelectorAll('.component');
+  const traces = document.querySelectorAll('.trace');
+  const tooltip = document.getElementById('tooltip');
+  const detailEmpty = document.getElementById('detail-empty');
+  const detailContent = document.getElementById('detail-content');
+  let selectedId = null;
+
+  function updateProgress(){
+    let total = 0, identified = 0;
+    components.forEach(c => {
+      total++;
+      if(c.dataset.identified === 'true') identified++;
+    });
+    const pct = Math.round((identified / total) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-count').textContent = identified + ' / ' + total + ' COMPONENTS IDENTIFIED';
+  }
+
+  function highlightTraces(compId){
+    traces.forEach(t => {
+      const conn = t.dataset.connects || '';
+      // Extract the short ID from comp-XX
+      const shortId = compId.replace('comp-','');
+      if(conn.split(',').indexOf(shortId) >= 0){
+        t.classList.add('highlighted');
+      } else {
+        t.classList.remove('highlighted');
+      }
+    });
+  }
+
+  function clearTraces(){
+    traces.forEach(t => t.classList.remove('highlighted'));
+  }
+
+  function showDetail(comp){
+    const name = comp.dataset.name || '';
+    const parts = name.split(' — ');
+    const designator = parts[0] || '';
+    const fullName = parts[1] || name;
+    const identified = comp.dataset.identified === 'true';
+    const details = comp.dataset.details || '';
+    const notes = comp.dataset.notes || '';
+    const status = comp.dataset.status || '';
+
+    document.getElementById('dc-designator').textContent = designator;
+    document.getElementById('dc-name').textContent = fullName;
+
+    // Status badge
+    let badgeClass = 'analyzed';
+    if(status === 'PARTIALLY ANALYZED') badgeClass = 'partial';
+    if(status === 'UNIDENTIFIED') badgeClass = 'unidentified';
+    document.getElementById('dc-status-wrap').innerHTML =
+      '<span class="status-badge ' + badgeClass + '">' + status + '</span>';
+
+    // Details
+    const detailsEl = document.getElementById('dc-details');
+    if(!identified){
+      detailsEl.innerHTML = '<span class="unknown">' + details + '</span>';
+    } else {
+      detailsEl.textContent = details;
+    }
+
+    // Notes
+    const notesSection = document.getElementById('dc-notes-section');
+    const notesEl = document.getElementById('dc-notes');
+    if(notes){
+      notesSection.style.display = 'block';
+      notesEl.textContent = notes;
+    } else {
+      notesSection.style.display = 'none';
+    }
+
+    // Warning
+    const warnEl = document.getElementById('dc-warning');
+    if(!identified){
+      warnEl.innerHTML = '<div class="analysis-warning">REQUIRES FURTHER ANALYSIS — Workbench tools and time needed to identify this component.</div>';
+    } else {
+      warnEl.innerHTML = '';
+    }
+
+    detailEmpty.style.display = 'none';
+    detailContent.classList.add('active');
+  }
+
+  function selectComponent(comp){
+    // Deselect previous
+    components.forEach(c => c.classList.remove('selected'));
+    clearTraces();
+
+    if(selectedId === comp.id){
+      // Toggle off
+      selectedId = null;
+      detailEmpty.style.display = 'block';
+      detailContent.classList.remove('active');
+      return;
+    }
+
+    selectedId = comp.id;
+    comp.classList.add('selected');
+    highlightTraces(comp.id);
+    showDetail(comp);
+  }
+
+  // Click handlers
+  components.forEach(comp => {
+    comp.addEventListener('click', function(e){
+      e.stopPropagation();
+      selectComponent(comp);
+    });
+
+    // Hover tooltip
+    comp.addEventListener('mouseenter', function(e){
+      tooltip.textContent = comp.dataset.name;
+      tooltip.style.display = 'block';
+    });
+    comp.addEventListener('mousemove', function(e){
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+    });
+    comp.addEventListener('mouseleave', function(){
+      tooltip.style.display = 'none';
+    });
+  });
+
+  // Click on empty space deselects
+  document.getElementById('pcb-svg').addEventListener('click', function(){
+    components.forEach(c => c.classList.remove('selected'));
+    clearTraces();
+    selectedId = null;
+    detailEmpty.style.display = 'block';
+    detailContent.classList.remove('active');
+  });
+
+  updateProgress();
+
+  // ============================================================
+  // AUTO-SYNC: poll for file changes every 10 seconds
+  // ============================================================
+  function syncData(){
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', window.location.href + '?t=' + Date.now(), true);
+    xhr.onload = function(){
+      if(xhr.status === 200){
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(xhr.responseText, 'text/html');
+        var newComps = doc.querySelectorAll('.component');
+        newComps.forEach(function(nc){
+          var existing = document.getElementById(nc.id);
+          if(existing){
+            // Sync data attributes
+            ['data-name','data-identified','data-details','data-notes','data-status'].forEach(function(attr){
+              var newVal = nc.getAttribute(attr);
+              if(newVal !== null && newVal !== existing.getAttribute(attr)){
+                existing.setAttribute(attr, newVal);
+                // Update unidentified visual state
+                if(attr === 'data-identified'){
+                  if(newVal === 'true'){
+                    existing.classList.remove('unidentified');
+                  } else {
+                    existing.classList.add('unidentified');
+                  }
+                }
+              }
+            });
+          }
+        });
+        updateProgress();
+        // If something is selected, refresh its detail view
+        if(selectedId){
+          var sel = document.getElementById(selectedId);
+          if(sel) showDetail(sel);
+        }
+      }
+    };
+    xhr.send();
+  }
+  setInterval(syncData, 10000);
+})();
+</script>
+</body>
+</html>

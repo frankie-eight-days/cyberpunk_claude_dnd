@@ -951,4 +951,56 @@ Cross-faction work:
 
 ---
 
+## SANDBOX CONTENT — Available Anytime
+
+These side jobs, locations, and faction boards can be deployed whenever the player is exploring freely. They are not tied to the main plot and can be introduced organically through ambient hooks, NPC conversations, bounty boards, or environmental discovery.
+
+### Side Jobs
+
+**1. The Glitching Merchant**
+A Rusted Mile salvage dealer's inventory-tracking AI is displaying threatening messages and locking her out of her own stock system. Probably a firmware bug. Probably. *(Hardware Engineering / Software Exploitation. Reward: Salvage credit, merchant as future contact.)*
+
+**2. Dead Drop Courier**
+Someone left a sealed data chip at Mama Chen's with your name on it. The instructions say to deliver it to Dock 7, Warehouse 13, no questions asked. The chip is warm to the touch. *(Investigation / Stealth. Reward: 200 credits. Risk: Multiple parties want that chip.)*
+
+**3. The Ringing Tower**
+A decommissioned comm relay in Old Shanghai has started broadcasting again — a repeating signal on a frequency that shouldn't exist. Residents near the tower are reporting headaches and nightmares. *(Signal Intelligence / Hardware Engineering. Reward: Rare components, plot thread to Communion.)*
+
+**4. Underground Fight Circuit**
+The Jade Quarter fight ring is looking for a tech specialist to rig up a countermeasure against augmented fighters who are cheating with concealed hardware. Ethical gray zone. *(Hardware Engineering / Perception. Reward: Credits, Jade Circuit rep, access to fight ring's back rooms.)*
+
+**5. The Paralyzed Drone**
+A commercial delivery drone crashed on the roof of the player's building. Its cargo bay is sealed with military-grade encryption. The drone's owner hasn't come looking for it yet. What's inside? *(Drone Rigging / Software Exploitation. Reward: Whatever's in the cargo bay — could be valuable, could be dangerous, could be both.)*
+
+**6. Synth-Sake Alley Favor**
+A bartender at Synth-Sake Alley needs help debugging the automated mixing system — it's been producing drinks that taste like industrial solvent. Simple job, but the bar is a known info broker hangout. Good place to make friends or overhear something useful. *(Hardware Engineering. Reward: Free drinks, rumor drops, NPC introductions.)*
+
+### Explorable Locations (Not on the Main Path)
+
+**Abandoned Suncrest Dynamics Testing Facility** — Industrial zone, edge of The Grid. Mothballed after a "containment incident" five years ago. The security systems are still partially active. Rumored to contain prototype military hardware and research data. *(Loot potential: Tier 3-4 components. Risk: Automated defenses, possible corporate response.)*
+
+**The Floating Market** — Harbor district, accessible by water taxi from The Docks. A sprawling bazaar on linked cargo barges. Sells everything from bootleg augmentations to stolen art to custom-brewed pharmaceuticals. Neutral ground — even rival factions shop here. *(Social hub: Unique vendors, information, NPC encounters.)*
+
+**Old University District** — Between Old Shanghai and Jade Quarter. Mostly ruins, but someone has been restoring the electronics engineering lab. Workbenches, oscilloscopes, a functioning anechoic chamber. Who's been using it, and why? *(Crafting potential: Superior workbench for complex builds. Mystery: Who maintains it?)*
+
+**Sub-Level Zero** — Beneath The Rusted Mile. Maintenance tunnels and forgotten infrastructure. The locals say there's a community down there — people who disconnected from the grid entirely. No augmentations, no mesh network, no digital footprint. *(Lore / stealth route between districts / faction: The Disconnected.)*
+
+### Faction Job Boards
+
+Once the player has positive reputation with a faction, that faction offers standing freelance work:
+
+**Huang Wei Corp** (requires +25 rep): Field testing prototype augmentations. Corporate security consulting. "Acquiring" competitor research data.
+
+**The Oxidizers** (requires +25 rep): Sabotage operations against corporate infrastructure. Building jammers and signal disruptors. Smuggling supplies to resistance cells.
+
+**Jade Circuit Triad** (requires +25 rep): Security system bypass consulting. Custom hardware for smuggling operations. Technical arbitration in disputes.
+
+**NSPD Cybercrime** (requires +25 rep): Forensic analysis of seized devices. Tracking illegal augmentation clinics. Consulting on cybercrime cases (ironic, depending on the player's own activities).
+
+**The Communion** (requires +25 rep): Building secure communication hardware for AI entities. Investigating digital plague incidents. Hardware maintenance for hidden server nodes.
+
+**Black Lotus Society** (requires +25 rep): Intelligence gathering via technical surveillance. Building custom monitoring equipment. Data extraction from secured systems.
+
+---
+
 *End of campaign document. Good luck, DM. Make it count.*
